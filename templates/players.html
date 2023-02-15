@@ -6,22 +6,28 @@
 </script>
 {% endblock script %}
 
+{% block style %}
+<style>
 
+</style>
+{% endblock %}
+{% block login %}{{ login }}{% endblock %}
 {% block content %}
-<h2>Players</h2>
-<form class="form-inline my-2 my-lg-0" action="{{ url_for('search') }}" method="post">
-  <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" value="" id="string" name="search">
-  <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="search">Search</button>
-</form>
+<div>
+  <h2>Players</h2>
+  <form class="form-inline my-2 my-lg-0 ml-auto" action="{{ url_for('search') }}" method="post">
+    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" value="" id="string" name="search">
+    <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="search">Search</button>
+  </form>
+</div>
 <a class="nav-link" href="sortPlayers" id="sortByRating">Sort by rating</a>
 <div class="list-group">
     {% for player in players %}
-    <a href="#" class="list-group-item list-group-item-action active" aria-current="true">
-      <div class="d-flex w-100 justify-content-between">
-        <h5 class="mb-1">{{ player[0] }}</h5>
-        <h5>{{ player[1] }}</h5>
-      </div>
-      <p class="mb-1">Some placeholder content in a paragraph.</p>
+    <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+      <img src="{{ player[2] }}" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
+      <h5 class="mb-1" style="float: left;">{{ player[0] }}</h5>
+      <h5 style="text-align: right;">{{ player[1] }}</h5>
+      <p class="mb-1">PDGA #{{ player[3] }}</p>
       <small>And some small print.</small>
     </a>
     {% endfor %}

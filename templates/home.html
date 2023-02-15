@@ -1,5 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Home Page{% endblock %}
+{% block style %}
+<style>
+</style>
+{% endblock %}
+{% block login %}{{ login }}{% endblock %}
 {% block content %}
-<h2>FANTASY DISC GOLF HOME</h2>
+<img src="../static/FantasyDGLogo.jpg" width="250px" style="margin: 1% 0 1% 1%;">
+<h4 style="margin: 0 0 0 2%">Top available players</h4>
+<div class="list-group" style="flex-direction: row;">
+    {% for player in players %}
+    <a href="#" class="list-group-item list-group-item-action" aria-current="true" style="width: 30%; margin: 0 0 0 2%; background-color: #A6FFAA; border-radius: 10%;">
+      <img src="{{ player[2] }}" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
+      <h5 class="mb-1" style="float: left;">{{ player[0] }}</h5>
+      <h5 style="text-align: right;">{{ player[1] }}</h5>
+      <p class="mb-1">PDGA #{{ player[3] }}</p>
+      <small>And some small print.</small>
+    </a>
+    {% endfor %}
+</div>
 {% endblock %}

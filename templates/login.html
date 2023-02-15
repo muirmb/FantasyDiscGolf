@@ -1,0 +1,25 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="../static/css/styles.css" />
+    </head>
+    <body>
+        <form class="form-signin" style="display: inline-block; text-align: center; align-items: center;" action="{{ url_for('login') }}" method="post">
+            <img src="../static/FantasyDGLogo.jpg" width="350px" style="margin: 0 0 2% 0;">
+            <h1 class="h3 mb-3 font-weight-normal">Login</h1>
+            <input type="email" name="inputEmail" class="form-control" placeholder="Email address" required autofocus>
+            <input type="password" name="inputPassword" class="form-control" placeholder="Password" required>
+            <div class="checkbox mb-3">
+            <label>
+                <input type="checkbox" value="remember-me"> Remember me
+            </label>
+            </div>
+            <div style="padding-top: 5%"></div>
+            {% if error %}<div style="color: red"><strong>Error:</strong> {{ error }}</div>{% endif %}
+            <button style="background-color: #A6FFAA; width: 35%;" type="submit">
+                <h2>Sign in</h2>
+            </button>
+            <div style="padding-top: 5%"></div>
+            <a class="form-control" href="register">New user? Register here</a>
+        </form>
+    </body>
+</html>

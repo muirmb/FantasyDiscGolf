@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="../static/css/styles.css" />
+    </head>
+    <body>
+        <form class="form-signin" style="display: inline-block; text-align: center; align-items: center;" action="{{ url_for('register') }}" method="post">
+            <img src="../static/FantasyDGLogo.jpg" width="350px" style="margin: 0 0 2% 0;">
+            <h1 class="h3 mb-3 font-weight-normal">Create an account</h1>
+            <input type="email" name="registerEmail" class="form-control" placeholder="Email address" required autofocus>
+            <input type="text" name="registerUsername" class="form-control" placeholder="Username" required>
+            <input type="password" name="registerPassword" class="form-control" placeholder="Password" required>
+            <input type="password" name="reregisterPassword" class="form-control" placeholder="Re-enter password" required>
+            <div style="padding-top: 5%"></div>
+            {% if error %}<div style="color: red"><strong>Error:</strong> {{ error }}</div>{% endif %}
+            <button style="background-color: #A6FFAA; width: 35%;" type="submit">
+                <h2>Register</h2>
+            </button>
+            <div style="padding-top: 5%"></div>
+            <a class="form-control" href="login">Already have an account? Log in here</a>
+        </form>
+    </body>
+</html>
