@@ -2,5 +2,15 @@
 {% block title %}My Team{% endblock %}
 {% block login %}{{ login }}{% endblock %}
 {% block content %}
-<h2>{{ username }}'s Team</h2>
+<h2 style="margin: 0 0 0 2%">{{ username }}'s Team</h2>
+<div class="list-group" style="width: 40%; padding-left: 2%;">
+    {% for player in players %}
+    <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+      <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
+      <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
+      <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
+      <p class="mb-1">PDGA #{{ player[2] }}</p>
+    </a>
+    {% endfor %}
+  </div>
 {% endblock %}

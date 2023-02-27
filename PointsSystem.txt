@@ -1,0 +1,58 @@
+Points system
+
+END OF TOURNAMENT PLACEMENT
+1st place - 100 points
+2nd place - 80 points
+3rd - 60 points
+4th - 40 points
+5th-10th - 20 points
+10th-15th - 15 points
+15-20th - 10 points
+20th-30th - 5 points
+
+ACCURACY (PER ROUND)
+Putting C1X 100% - 10 points
+Putting C1X >90% - 5 points
+Putting C1X >80% - 2 points
+
+Putting C2 100% - 20 points
+Putting C2 >85% - 15 points
+Putting C2 >70% - 10 points
+Putting C2 >50% - 5 points
+
+Parked 100% - 1000 points
+Parked >80% - 200 points
+Parked >50% - 50 points
+Parked >30% - 20 points
+Parked >20% - 15 points
+Parked >10% - 5 points
+
+GIR C1 100% - 100 points
+GIR C1 >70% - 30 points
+GIR C1 >50% - 20 points
+GIR C1 >40% - 10 points
+GIR C1 >30% - 5 points
+
+GIR C2 100% - 30 points
+GIR C2 >80% - 20 points
+GIR C2 >60% - 10 points
+GIR C2 >50% - 5 points
+GIR C2 >40% - 2 points
+
+Fairway hits 100% - 10 points
+Fairway hits 90% - 5 points
+Fairway hits 80% - 2 points
+
+HOLE SCORES
+Albatross - 100 points
+Ace - 50 points
+Eagle - 10 points
+Birdie - 2 points
+Par - 0 points
+Bogey - -2 points
+Double bogey - -4 points
+Triple+ bogey - -10 points
+
+STROKES
+Out of bounds/Penalty - -5 points
+
