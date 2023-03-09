@@ -49,7 +49,7 @@ class Owns(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
     pdga_number = db.Column(db.Integer, primary_key=True)
     league_id = db.Column(db.Integer, nullable=False)
-    def __init__(self, user, player, league):
+    def __init__(self, user, player):
         self.user_id = user
         self.pdga_number = player
         self.league_id = 0
@@ -61,16 +61,19 @@ class TourPlayer(db.Model):
     tour_number = db.Column(db.Integer, nullable=False)
     points = db.Column(db.Integer, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
-    def __init__(self, name, pdga_number, points, rating):
+    division = db.Column(db.String(8), nullable=False)
+    def __init__(self, name, pdga_number, points, rating, division):
         self.player_name = name
         self.pdga_number = pdga_number
         self.tour_number = 1
         self.points = points
         self.rating = rating
+        self.division = division
 
 @app.route("/")
 def home():
     #getTourPlayers()
+    #addOwns()
     login = "Login"
     if 'user' in session:
         login = "Logout"
@@ -92,6 +95,7 @@ def login():
         else:
             flash('You were logged in')
             session['user'] = user.username
+            session['id'] = user.user_id
             return redirect(url_for('myTeam'))
     return render_template("login.html", error=error)
 
@@ -160,29 +164,51 @@ def search():
             matches.append(player)
     return render_template("players.html", players=matches)
 
+def addOwns():
+    db.session.add(Owns(1, 37817))
+    db.session.add(Owns(1, 44382))
+    db.session.add(Owns(1, 17295))
+    db.session.add(Owns(1, 98091))
+    db.session.add(Owns(1, 44184))
+    db.session.commit()
+
 @app.route("/myTeam")
 def myTeam():
     totalPoints = 0
     login = "Login"
     if 'user' in session:
         login = "Logout"
-        owned = [37817, 44382, 17295, 98091, 15857, 72844]
-        players = []
+        owned = []
+        userOwns = Owns.query.filter_by(user_id=session['id'])
+        for obj in userOwns:
+            owned.append(obj.pdga_number)
+        mpoPlayers = []
+        fpoPlayers = []
         
         for num in owned:
             parr = []
             player = TourPlayer.query.filter_by(pdga_number=num).first()
             if player == None:
                 continue
+            totalPoints += player.points
             parr.append(player.player_name)
             parr.append(player.points)
             parr.append(player.pdga_number)
             parr.append(player.rating)
-            players.append(parr)
+            if player.division == "MPO":
+                mpoPlayers.append(parr)
+            elif player.division == "FPO":
+                fpoPlayers.append(parr)
 
-        return render_template("myTeam.html", username=session['user'], login=login, players=players)
+        return render_template("myTeam.html", username=session['id'], login=login, mpoPlayers=mpoPlayers, fpoPlayers=fpoPlayers, total=totalPoints)
     else:
         return redirect(url_for("login"))
+
+@app.route("/addToTeam", methods=['GET', 'POST'])
+def addToTeam():
+    db.session.add(Owns(1, request.form["addPDGANum"]))
+    db.session.commit()
+    return redirect(url_for('myTeam'))
 
 def sortByRating(player):
     return player[1]
@@ -214,9 +240,8 @@ def getTourPlayers():
         pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
         rating = odd.find('td', attrs={'class': 'player-rating propagator'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
-        if pdgaNum != '33705':
-            db.session.add(TourPlayer(name, pdgaNum, place, rating))
-            db.session.commit()
+        db.session.add(TourPlayer(name, pdgaNum, place, rating, "MPO"))
+        db.session.commit()
 
     evens = table[1].find_all('tr', attrs={'class':'even'})
 
@@ -225,11 +250,30 @@ def getTourPlayers():
         pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
         rating = even.find('td', attrs={'class': 'player-rating propagator'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
-        if pdgaNum != 33705:
-            db.session.add(TourPlayer(name, pdgaNum, place, rating))
-            db.session.commit()
+        db.session.add(TourPlayer(name, pdgaNum, place, rating, "MPO"))
+        db.session.commit()
 
-    return len(odds)
+    odds = table[2].find_all('tr', attrs={'class':'odd'})
+
+    for odd in odds:
+        place = odd.find('td', attrs={'class': 'place'}).text
+        pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
+        rating = odd.find('td', attrs={'class': 'player-rating'}).text
+        name = odd.find('td', attrs={'class': 'player'}).a.text
+        db.session.add(TourPlayer(name, pdgaNum, place, rating, "FPO"))
+        db.session.commit()
+
+    evens = table[2].find_all('tr', attrs={'class':'even'})
+
+    for even in evens:
+        place = even.find('td', attrs={'class': 'place'}).text
+        pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
+        rating = even.find('td', attrs={'class': 'player-rating'}).text
+        name = even.find('td', attrs={'class': 'player'}).a.text
+        db.session.add(TourPlayer(name, pdgaNum, place, rating, "FPO"))
+        db.session.commit()
+
+    return 0
 
 
 if __name__ == "__main__":

@@ -2,15 +2,33 @@
 {% block title %}My Team{% endblock %}
 {% block login %}{{ login }}{% endblock %}
 {% block content %}
-<h2 style="margin: 0 0 0 2%">{{ username }}'s Team</h2>
-<div class="list-group" style="width: 40%; padding-left: 2%;">
-    {% for player in players %}
-    <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-      <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
-      <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
-      <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
-      <p class="mb-1">PDGA #{{ player[2] }}</p>
-    </a>
-    {% endfor %}
-  </div>
+<h2 style="margin: 0 0 0 2%; float: left;">{{ username }}'s Team</h2>
+<h2 style="margin: 0 2% 0 0; text-align: right;">Total Points: {{ total }}</h2>
+<div style="margin: 2% 0 0 2%; float: left; width: 40%;">
+    <h4>MPO</h4>
+    <div class="list-group">
+        {% for player in mpoPlayers %}
+        <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+        <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
+        <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
+        <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
+        <p class="mb-1">PDGA #{{ player[2] }}</p>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+<div style="margin: 2% 0 0 44%; width: 40%;">
+    <h4>FPO</h4>
+    <div class="list-group">
+        {% for player in fpoPlayers %}
+        <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+        <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
+        <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
+        <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
+        <p class="mb-1">PDGA #{{ player[2] }}</p>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+
 {% endblock %}
