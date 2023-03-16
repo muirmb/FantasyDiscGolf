@@ -1,6 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Account{% endblock %}
+{% block style %}
+<style>
+    td {
+        border-bottom: 1px solid black;
+        width: 100%;
+    }
+</style>
+{% endblock style %}
 {% block login %}{{ login }}{% endblock %}
 {% block content %}
-<h2>My Account</h2>
+<div style="padding-left: 2%; width: 50%;">
+    <h2 style="padding-bottom: 2%;">My Account</h2>
+    <table>
+        <tr>
+            <td><b>Email</b></td>
+            <td style="text-align: right;">mbm79@pitt.edu</td>
+        </tr>
+        <tr>
+            <td><b>Username</b></td>
+            <td style="text-align: right;">Cransus</td>
+        </tr>
+        <tr>
+            <td><b>Leagues (5 max)</b></td>
+            <td style="text-align: right;">{% for name in leagues %}{{name}}, {% endfor %}</td>
+        </tr>
+    </table>
+    <a class="navlink" href="/changePassword" id="changePassword">Change password here</a>
+</div>
 {% endblock %}

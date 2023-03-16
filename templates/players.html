@@ -24,16 +24,16 @@
 <div class="list-group">
     {% for player in players %}
     <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-      <img src="{{ player[2] }}" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
+      <img src="../static/simon.jpg" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
       <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
-      <h5 style="float: left; color: #888888">{{ player[1] }}</h5>
+      <h5 style="float: left; color: #888888">{{ player[3] }}</h5>
       <div style="text-align: right;">
         <form action="{{ url_for('addToTeam') }}" method="post">
-          <input type="hidden" value="{{ player[3] }}" name="addPDGANum">
+          <input type="hidden" value="{{ player[2] }}" name="addPDGANum">
           <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="add">Add Player</button>
         </form>
       </div>
-      <p class="mb-1">PDGA #{{ player[3] }}</p>
+      <p class="mb-1">PDGA #{{ player[2] }}</p>
       <small>And some small print.</small>
     </a>
     {% endfor %}

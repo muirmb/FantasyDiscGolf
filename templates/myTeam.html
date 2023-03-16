@@ -9,10 +9,10 @@
     <div class="list-group">
         {% for player in mpoPlayers %}
         <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-        <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
-        <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
-        <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
-        <p class="mb-1">PDGA #{{ player[2] }}</p>
+            <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
+            <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
+            <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
+            <p class="mb-1">PDGA #{{ player[2] }}</p>
         </a>
         {% endfor %}
     </div>

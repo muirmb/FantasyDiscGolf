@@ -13,12 +13,6 @@ db = SQLAlchemy(app)
 
 app.secret_key = 'development key'
 
-# User-League relationship
-user_in_league = db.Table('user_in_league',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.user_id'), primary_key=True),
-    db.Column('league_id', db.Integer, db.ForeignKey('league.league_id'), primary_key=True)
-)
-
 # User class
 class User(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
@@ -35,12 +29,13 @@ class User(db.Model):
 # League class
 class League(db.Model):
     league_id = db.Column(db.Integer, primary_key=True)
-    league_name = db.Column(db.String(24), nullable=False)
+    league_name = db.Column(db.String(24), unique=True, nullable=False)
+    password = db.Column(db.String(24), nullable=False)
     max_num_users = db.Column(db.Integer, nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
-    users = db.relationship('User', secondary=user_in_league, lazy='subquery', backref=db.backref('leagues', lazy=True))
-    def __init__(self, league_name, max_num_users, owner_id):
+    def __init__(self, league_name, max_num_users, password, owner_id):
         self.league_name = league_name
+        self.password = password
         self.max_num_users = max_num_users
         self.owner_id = owner_id
 
@@ -58,17 +53,25 @@ class Owns(db.Model):
 class TourPlayer(db.Model):
     player_name = db.Column(db.String(32), nullable=False)
     pdga_number = db.Column(db.Integer, primary_key=True)
-    tour_number = db.Column(db.Integer, nullable=False)
+    tour_number = db.Column(db.Integer, primary_key=True)
     points = db.Column(db.Integer, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     division = db.Column(db.String(8), nullable=False)
     def __init__(self, name, pdga_number, points, rating, division):
         self.player_name = name
         self.pdga_number = pdga_number
-        self.tour_number = 1
+        self.tour_number = 2
         self.points = points
         self.rating = rating
         self.division = division
+
+class UserInLeague(db.Model):
+    user_id = db.Column(db.Integer, primary_key=True)
+    league_id = db.Column(db.Integer, primary_key=True)
+    def __init__(self, user_id, league_id):
+        self.user_id = user_id
+        self.league_id = league_id
+
 
 @app.route("/")
 def home():
@@ -79,6 +82,20 @@ def home():
         login = "Logout"
     avPlayers = [["Ricky Wysocki", 1047, "../static/ricky.jpg", 38008], ["Eagle McMahon", 1043, "../static/eagle.jpeg", 37817]]
     return render_template("home.html", players=avPlayers, login=login)
+
+@app.route("/create_league", methods=['GET','POST'])
+def create_league():
+    db.session.add(League(request.form['league_name'], request.form['max_users'], request.form['league_password'], session['id']))
+    return redirect(url_for('home'))
+
+@app.route("/league")
+def league():
+    if 'user' in session:
+        # Get all leagues to display
+        leagues = League.query.all()
+        return render_template("league.html", inLeague=False, login="Logout", leagues=leagues)
+    else:
+        return redirect(url_for("login"))
 
 @app.route("/login", methods=['GET','POST'])
 def login():
@@ -125,15 +142,33 @@ def account():
     login = "Login"
     if 'user' in session:
         login = "Logout"
-    return render_template("account.html", login=login)
+    return render_template("account.html", login=login, leagues=['I', 'D', 'I', 'O', 'T'])
+
+@app.route("/changePassword")
+def changePassword():
+    return render_template("changePassword.html")
 
 @app.route("/players")
 def players():
-    players = [["Chris Dickerson", 1044, "../static/chrisdickerson", 62467], ["Paul Mcbeth", 1050, "../static/paulmcb.png", 27523], ["Ricky Wysocki", 1047, "../static/ricky.jpg", 38008], ["Eagle McMahon", 1043, "../static/eagle.jpeg", 37817], ["Simon Lizotte", 1037, "../static/simon.jpg", 8332]]
+    p = TourPlayer.query.filter_by(tour_number=2)
+    mpoPlayers = []
+    fpoPlayers = []
+
+    for player in p:
+        parr = []
+        parr.append(player.player_name)
+        parr.append(player.points)
+        parr.append(player.pdga_number)
+        parr.append(player.rating)
+        if player.division == "MPO":
+            mpoPlayers.append(parr)
+        elif player.division == "FPO":
+            fpoPlayers.append(parr)
+
     login = "Login"
     if 'user' in session:
         login = "Logout"
-    return render_template("players.html", players=players, login=login)
+    return render_template("players.html", players=mpoPlayers, login=login)
 
 @app.route("/availablePlayers")
 def availablePlayers():
@@ -148,21 +183,37 @@ def sortPlayers():
     login = "Login"
     if 'user' in session:
         login = "Logout"
-    players = [["Chris Dickerson", 1044, "../static/chrisdickerson", 62467], ["Paul Mcbeth", 1050, "../static/paulmcb.png", 27523], ["Ricky Wysocki", 1047, "../static/ricky.jpg", 38008], ["Eagle McMahon", 1043, "../static/eagle.jpeg", 37817], ["Simon Lizotte", 1037, "../static/simon.jpg", 8332]]
+    players=[]
+    p = TourPlayer.query.filter_by(tour_number=2)
+    for player in p:
+        parr = []
+        parr.append(player.player_name)
+        parr.append(player.points)
+        parr.append(player.pdga_number)
+        parr.append(player.rating)
+        players.append(parr)
     players.sort(reverse=True, key=sortByRating)
     return render_template("players.html", players=players, login=login)
 
 @app.route("/search", methods=['GET','POST'])
 def search():
-    players = [["Chris Dickerson", 1044, "../static/chrisdickerson", 62467], ["Paul Mcbeth", 1050, "../static/paulmcb.png", 27523], ["Ricky Wysocki", 1047, "../static/ricky.jpg", 38008], ["Eagle McMahon", 1043, "../static/eagle.jpeg", 37817], ["Simon Lizotte", 1037, "../static/simon.jpg", 8332]]
+    players = TourPlayer.query.filter_by(tour_number=2)
     string = ""
     matches = []
+    login = "Login"
+    if 'user' in session:
+        login = "Logout"
     if request.method == 'POST':
         string = request.form['search']
     for player in players:
-        if player[0].rfind(string) > -1:
-            matches.append(player)
-    return render_template("players.html", players=matches)
+        if player.player_name.rfind(string) > -1:
+            parr = []
+            parr.append(player.player_name)
+            parr.append(player.points)
+            parr.append(player.pdga_number)
+            parr.append(player.rating)
+            matches.append(parr)
+    return render_template("players.html", players=matches, login=login)
 
 def addOwns():
     db.session.add(Owns(1, 37817))
@@ -200,18 +251,18 @@ def myTeam():
             elif player.division == "FPO":
                 fpoPlayers.append(parr)
 
-        return render_template("myTeam.html", username=session['id'], login=login, mpoPlayers=mpoPlayers, fpoPlayers=fpoPlayers, total=totalPoints)
+        return render_template("myTeam.html", username=session['user'], login=login, mpoPlayers=mpoPlayers, fpoPlayers=fpoPlayers, total=totalPoints)
     else:
         return redirect(url_for("login"))
 
 @app.route("/addToTeam", methods=['GET', 'POST'])
 def addToTeam():
-    db.session.add(Owns(1, request.form["addPDGANum"]))
+    db.session.add(Owns(session['id'], request.form["addPDGANum"]))
     db.session.commit()
     return redirect(url_for('myTeam'))
 
 def sortByRating(player):
-    return player[1]
+    return player[3]
 
 def getName(pdgaNum):
     r = requests.get("https://www.pdga.com/player/"+str(pdgaNum))
@@ -230,13 +281,16 @@ def getName(pdgaNum):
     return careerWins
 
 def getTourPlayers():
-    r = requests.get("https://www.pdga.com/tour/event/65206")
+    r = requests.get("https://www.pdga.com/tour/event/66457")
     soup = BeautifulSoup(r.text, 'html.parser')
     table = soup.find_all('div', attrs={'class': 'table-container'})
     odds = table[1].find_all('tr', attrs={'class':'odd'})
 
     for odd in odds:
-        place = odd.find('td', attrs={'class': 'place'}).text
+        if odd.find('td', attrs={'class': 'place'}) is not None:
+            place = odd.find('td', attrs={'class': 'place'}).text
+        else:
+            place = 0
         pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
         rating = odd.find('td', attrs={'class': 'player-rating propagator'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
@@ -246,7 +300,10 @@ def getTourPlayers():
     evens = table[1].find_all('tr', attrs={'class':'even'})
 
     for even in evens:
-        place = even.find('td', attrs={'class': 'place'}).text
+        if even.find('td', attrs={'class': 'place'}) is not None:
+            place = even.find('td', attrs={'class': 'place'}).text
+        else:
+            place = 0
         pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
         rating = even.find('td', attrs={'class': 'player-rating propagator'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
@@ -256,7 +313,10 @@ def getTourPlayers():
     odds = table[2].find_all('tr', attrs={'class':'odd'})
 
     for odd in odds:
-        place = odd.find('td', attrs={'class': 'place'}).text
+        if odd.find('td', attrs={'class': 'place'}) is not None:
+            place = odd.find('td', attrs={'class': 'place'}).text
+        else:
+            place = 0
         pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
         rating = odd.find('td', attrs={'class': 'player-rating'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
@@ -266,7 +326,10 @@ def getTourPlayers():
     evens = table[2].find_all('tr', attrs={'class':'even'})
 
     for even in evens:
-        place = even.find('td', attrs={'class': 'place'}).text
+        if even.find('td', attrs={'class': 'place'}) is not None:
+            place = even.find('td', attrs={'class': 'place'}).text
+        else:
+            place = 0
         pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
         rating = even.find('td', attrs={'class': 'player-rating'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
