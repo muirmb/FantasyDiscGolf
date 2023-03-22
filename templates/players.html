@@ -12,6 +12,21 @@
 </style>
 {% endblock %}
 {% block login %}{{ login }}{% endblock %}
+
+{% block moreNav %}
+{% if leagueName %}
+<li class="nav-item">
+  <a class="nav-link" href="league" style="color: lightseagreen">{{ leagueName }}</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="myTeam" style="color: lightseagreen">My Team <span class="sr-only">(current)</span></a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="availablePlayers" style="color: lightseagreen">Available Players</a>
+</li>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div>
   <h2>Players</h2>
@@ -25,15 +40,16 @@
     {% for player in players %}
     <a href="#" class="list-group-item list-group-item-action" aria-current="true">
       <img src="../static/simon.jpg" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
-      <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
-      <h5 style="float: left; color: #888888">{{ player[3] }}</h5>
+      <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player.player_name }}</h5>
+      <h5 style="float: left; color: #888888">{{ player.rating }}</h5>
       <div style="text-align: right;">
         <form action="{{ url_for('addToTeam') }}" method="post">
-          <input type="hidden" value="{{ player[2] }}" name="addPDGANum">
+          <input type="hidden" value="{{ player.pdga_number }}" name="addPDGANum">
+          {% if leagueName %}<input type="hidden" value="{{ leagueName }}" name="leagueName">{% endif %}
           <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="add">Add Player</button>
         </form>
       </div>
-      <p class="mb-1">PDGA #{{ player[2] }}</p>
+      <p class="mb-1">PDGA #{{ player.pdga_number }}</p>
       <small>And some small print.</small>
     </a>
     {% endfor %}

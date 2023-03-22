@@ -8,13 +8,12 @@
 {% block content %}
 <img src="../static/FantasyDGLogo.jpg" width="250px" style="margin: 1% 0 1% 1%;">
 <h4 style="margin: 0 0 0 2%">Top available players</h4>
-<div class="list-group" style="flex-direction: row;">
-    {% for player in players %}
-    <a href="#" class="list-group-item list-group-item-action" aria-current="true" style="width: 30%; margin: 0 0 0 2%; background-color: #A6FFAA; border-radius: 10%;">
-      <img src="{{ player[2] }}" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
-      <h5 class="mb-1" style="float: left;">{{ player[0] }}</h5>
-      <h5 style="text-align: right;">{{ player[1] }}</h5>
-      <p class="mb-1">PDGA #{{ player[3] }}</p>
+<div class="list-group" style="flex-direction: row; overflow: auto;">
+    {% for league in leagues %}
+    <a href="{{league.league_name}}/league" class="list-group-item list-group-item-action" aria-current="true" style="margin: 0 0 0 2%; background-color: #A6FFAA; border-radius: 10%; min-width: 20%">
+      <img src="../static/simon.jpg" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
+      <h5 class="mb-1" style="float: left;">{{ league.league_name }}</h5>
+      <h5 style="text-align: right;">{{ league.curr_num_users }}/{{league.max_num_users}}</h5>
       <small>And some small print.</small>
     </a>
     {% endfor %}

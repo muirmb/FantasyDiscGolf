@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% block title %}My Team{% endblock %}
 {% block login %}{{ login }}{% endblock %}
+
+{% block moreNav %}
+<li class="nav-item">
+    <a class="nav-link" href="league" style="color: lightseagreen">{{ leagueName }}</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="myTeam" style="color: lightseagreen">My Team <span class="sr-only">(current)</span></a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="availablePlayers" style="color: lightseagreen">Available Players</a>
+</li>
+{% endblock %}
+
 {% block content %}
 <h2 style="margin: 0 0 0 2%; float: left;">{{ username }}'s Team</h2>
 <h2 style="margin: 0 2% 0 0; text-align: right;">Total Points: {{ total }}</h2>

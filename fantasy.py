@@ -32,22 +32,24 @@ class League(db.Model):
     league_name = db.Column(db.String(24), unique=True, nullable=False)
     password = db.Column(db.String(24), nullable=False)
     max_num_users = db.Column(db.Integer, nullable=False)
+    curr_num_users = db.Column(db.Integer, nullable=False)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.user_id'), nullable=False)
     def __init__(self, league_name, max_num_users, password, owner_id):
         self.league_name = league_name
         self.password = password
         self.max_num_users = max_num_users
         self.owner_id = owner_id
+        self.curr_num_users = 0
 
 # User owns player in League
 class Owns(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
     pdga_number = db.Column(db.Integer, primary_key=True)
-    league_id = db.Column(db.Integer, nullable=False)
-    def __init__(self, user, player):
+    league_id = db.Column(db.Integer, primary_key=True)
+    def __init__(self, user, player, league):
         self.user_id = user
         self.pdga_number = player
-        self.league_id = 0
+        self.league_id = league
 
 # Holds players' tournament data
 class TourPlayer(db.Model):
@@ -67,10 +69,24 @@ class TourPlayer(db.Model):
 
 class UserInLeague(db.Model):
     user_id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(24), nullable=False)
     league_id = db.Column(db.Integer, primary_key=True)
-    def __init__(self, user_id, league_id):
+    wins = db.Column(db.Integer, nullable=False)
+    losses = db.Column(db.Integer, nullable=False)
+    ties = db.Column(db.Integer, nullable=False)
+    totalPoints = db.Column(db.Integer, nullable=False)
+    def __init__(self, user_id, league_id, username):
         self.user_id = user_id
+        self.username = username
         self.league_id = league_id
+        self.wins = 0
+        self.losses = 0
+        self.ties = 0
+        self.totalPoints = 0
+
+
+
+#--- ROUTES ---#
 
 
 @app.route("/")
@@ -78,21 +94,34 @@ def home():
     #getTourPlayers()
     #addOwns()
     login = "Login"
+    leagues = []
     if 'user' in session:
         login = "Logout"
-    avPlayers = [["Ricky Wysocki", 1047, "../static/ricky.jpg", 38008], ["Eagle McMahon", 1043, "../static/eagle.jpeg", 37817]]
-    return render_template("home.html", players=avPlayers, login=login)
+        inLeagues = UserInLeague.query.filter_by(user_id=session['id'])
+        for l in inLeagues:
+            leagues.append(League.query.filter_by(league_id=l.league_id).first())
+    return render_template("home.html", leagues=leagues, login=login)
 
-@app.route("/create_league", methods=['GET','POST'])
-def create_league():
-    db.session.add(League(request.form['league_name'], request.form['max_users'], request.form['league_password'], session['id']))
-    return redirect(url_for('home'))
-
-@app.route("/league")
+@app.route("/league", methods=['GET','POST'])
 def league():
     if 'user' in session:
         # Get all leagues to display
         leagues = League.query.all()
+        if request.method == "POST":
+            if request.form['form'] == "join":
+                result = add_user_to_league(request.form['league_join_name'])
+                if result == 1:
+                    error="You are already in that league."
+                    return render_template("league.html", inLeague=False, login="Logout", leagues=leagues, error_join=error)
+                return redirect(url_for('inside_league', name=request.form['league_join_name']))
+            else:
+                leagueName = request.form['league_name']
+                if League.query.filter_by(league_name=leagueName).first() != None:
+                    return render_template("league.html", inLeague=False, login="Logout", leagues=leagues, error_create="That league name is taken")
+                db.session.add(League(leagueName, request.form['max_users'], request.form['league_password'], session['id']))
+                db.session.commit()
+                add_user_to_league(request.form['league_name'])
+                return redirect(url_for('inside_league', name=request.form['league_name']))
         return render_template("league.html", inLeague=False, login="Logout", leagues=leagues)
     else:
         return redirect(url_for("login"))
@@ -113,7 +142,7 @@ def login():
             flash('You were logged in')
             session['user'] = user.username
             session['id'] = user.user_id
-            return redirect(url_for('myTeam'))
+            return redirect(url_for('account'))
     return render_template("login.html", error=error)
 
 @app.route("/register", methods=['GET', 'POST'])
@@ -134,7 +163,7 @@ def register():
             db.session.add(User(username, email, request.form['registerPassword']))
             db.session.commit()
             flash('You were successfully registered and can login now')
-            return redirect(url_for('myTeam'))
+            return redirect(url_for('login'))
     return render_template("register.html", error=error)
 
 @app.route("/account")
@@ -142,7 +171,9 @@ def account():
     login = "Login"
     if 'user' in session:
         login = "Logout"
-    return render_template("account.html", login=login, leagues=['I', 'D', 'I', 'O', 'T'])
+        currUser = User.query.filter_by(user_id=session['id']).first()
+        return render_template("account.html", login=login, user=currUser, leagues=['I', 'D', 'I', 'O', 'T'])
+    return redirect(url_for('login'))
 
 @app.route("/changePassword")
 def changePassword():
@@ -151,32 +182,10 @@ def changePassword():
 @app.route("/players")
 def players():
     p = TourPlayer.query.filter_by(tour_number=2)
-    mpoPlayers = []
-    fpoPlayers = []
-
-    for player in p:
-        parr = []
-        parr.append(player.player_name)
-        parr.append(player.points)
-        parr.append(player.pdga_number)
-        parr.append(player.rating)
-        if player.division == "MPO":
-            mpoPlayers.append(parr)
-        elif player.division == "FPO":
-            fpoPlayers.append(parr)
-
     login = "Login"
     if 'user' in session:
         login = "Logout"
-    return render_template("players.html", players=mpoPlayers, login=login)
-
-@app.route("/availablePlayers")
-def availablePlayers():
-    login = "Login"
-    if 'user' in session:
-        login = "Logout"
-    avPlayers = [["Ricky Wysocki", 1047, "../static/ricky.jpg", 38008], ["Eagle McMahon", 1043, "../static/eagle.jpeg", 37817]]
-    return render_template("players.html", players=avPlayers, login=login)
+    return render_template("players.html", players=p, login=login)
 
 @app.route("/sortPlayers")
 def sortPlayers():
@@ -215,22 +224,54 @@ def search():
             matches.append(parr)
     return render_template("players.html", players=matches, login=login)
 
-def addOwns():
-    db.session.add(Owns(1, 37817))
-    db.session.add(Owns(1, 44382))
-    db.session.add(Owns(1, 17295))
-    db.session.add(Owns(1, 98091))
-    db.session.add(Owns(1, 44184))
+@app.route("/addToTeam", methods=['GET', 'POST'])
+def addToTeam():
+    league = request.form["leagueName"]
+    db.session.add(Owns(session['id'], request.form["addPDGANum"], getLeagueIDByName(league)))
     db.session.commit()
+    return redirect(url_for('myTeam', name=league))
 
-@app.route("/myTeam")
-def myTeam():
+
+
+#--- SPECIFIC LEAGUE ---#
+
+
+@app.route("/<name>/league", methods=['GET', 'POST'])
+def inside_league(name):
+    login = "Login"
+    if 'user' in session:
+        login = "Logout"
+        usersInLeague = UserInLeague.query.filter_by(league_id=getLeagueIDByName(name))
+        return render_template("inside_league.html", login=login, leagueName=name, users=usersInLeague)
+    else:
+        return redirect(url_for('login'))
+
+@app.route("/<name>/availablePlayers")
+def availablePlayers(name):
+    login = "Login"
+    if 'user' in session:
+        login = "Logout"
+        avPlayers = TourPlayer.query.filter_by(tour_number=2)
+        avPlayersList = []
+        for p in avPlayers:
+            avPlayersList.append(p)
+        ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(name))
+        for owned in ownedInLeague:
+            for player in avPlayersList:
+                if player.pdga_number == owned.pdga_number:
+                    avPlayersList.remove(player)
+        return render_template("players.html", players=avPlayersList, login=login, leagueName=name)
+    else:
+        return redirect(url_for('login'))
+
+@app.route("/<name>/myTeam")
+def myTeam(name):
     totalPoints = 0
     login = "Login"
     if 'user' in session:
         login = "Logout"
         owned = []
-        userOwns = Owns.query.filter_by(user_id=session['id'])
+        userOwns = Owns.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name))
         for obj in userOwns:
             owned.append(obj.pdga_number)
         mpoPlayers = []
@@ -251,16 +292,27 @@ def myTeam():
             elif player.division == "FPO":
                 fpoPlayers.append(parr)
 
-        return render_template("myTeam.html", username=session['user'], login=login, mpoPlayers=mpoPlayers, fpoPlayers=fpoPlayers, total=totalPoints)
+        return render_template("myTeam.html", username=session['user'], login=login, mpoPlayers=mpoPlayers, fpoPlayers=fpoPlayers, total=totalPoints, leagueName=name)
     else:
         return redirect(url_for("login"))
 
-@app.route("/addToTeam", methods=['GET', 'POST'])
-def addToTeam():
-    db.session.add(Owns(session['id'], request.form["addPDGANum"]))
-    db.session.commit()
-    return redirect(url_for('myTeam'))
 
+
+#--- METHODS ---#
+
+
+def add_user_to_league(league_name):
+    league = League.query.filter_by(league_name=league_name).first()
+    if UserInLeague.query.filter_by(league_id=league.league_id, user_id=session['id']).first() != None:
+        return 1
+    db.session.add(UserInLeague(session['id'], league.league_id, session['user']))
+    league.curr_num_users += 1
+    db.session.commit()
+    return 0
+
+def getLeagueIDByName(name):
+    return League.query.filter_by(league_name=name).first().league_id
+    
 def sortByRating(player):
     return player[3]
 

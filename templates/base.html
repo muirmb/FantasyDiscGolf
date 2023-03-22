@@ -18,29 +18,26 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
               <ul class="navbar-nav mr-auto">
                 <li class="nav-item">
-                  <a class="nav-link" href="myTeam">My Team <span class="sr-only">(current)</span></a>
+                  <a class="nav-link" href="../account">Account</a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link" href="account">Account</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="league">League</a>
+                  <a class="nav-link" href="../league">League</a>
                 </li>
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Players
                   </a>
                   <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="players">All Players</a>
-                    <a class="dropdown-item" href="availablePlayers">Available Players</a>
+                    <a class="dropdown-item" href="../players">All Players</a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="#">Something else here</a>
                   </div>
                 </li>
+                {% block moreNav %}{% endblock %}
               </ul>
               <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                  <a class="nav-link ml-auto" href="login">{% block login %}{% endblock %}</a>
+                  <a class="nav-link ml-auto" href="../login">{% block login %}{% endblock %}</a>
                 </li>
               </ul>
             </div>

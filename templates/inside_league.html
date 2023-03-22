@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}League Page{% endblock %}
+{% block style %}
+<style>
+</style>
+{% endblock %}
+{% block login %}{{ login }}{% endblock %}
+
+{% block moreNav %}
+<li class="nav-item">
+    <a class="nav-link" href="league" style="color: lightseagreen">{{ leagueName }}</a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="myTeam" style="color: lightseagreen">My Team <span class="sr-only">(current)</span></a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="availablePlayers" style="color: lightseagreen">Available Players</a>
+</li>
+{% endblock %}
+
+{% block content %}
+<h2 style="margin: 0 0 0 2%">{{ leagueName }}</h2>
+<div style="width: 40%; padding-left: 2%; padding-top: 2%;">
+    <h3>Players</h3>
+    <div class="list-group">
+        {% for user in users %}
+        <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ user.username }}</h5>
+            <div style="text-align: right; padding-left: 85%;">
+                <h5 style="float: left;">{{ user.wins }}-{{ user.ties }}-{{ user.losses }}</h5>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -6,51 +6,54 @@
 {% endblock %}
 {% block login %}{{ login }}{% endblock %}
 {% block content %}
-{% if inLeague %}
-<h2 style="margin: 0 0 0 2%; float: left;">{{ leagueName }}</h2>
-<h2 style="margin: 0 2% 0 0; text-align: right;">My Place: {{ place }}</h2>
-{% else %}
 <div style="float: left; width: 48%; margin: 0 0 2% 2%;">
     <h2>Join League</h2>
     <form class="form-inline my-2 my-lg-0 ml-auto" action="{{ url_for('search') }}" method="post">
         <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" value="" id="string" name="search">
         <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="search">Search</button>
     </form>
+    {% if error_join %}<div style="color: red"><strong>Error:</strong> {{ error_join }}</div>{% endif %}
     <div class="list-group">
         {% for league in leagues %}
         <a href="#" class="list-group-item list-group-item-action" aria-current="true">
             <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ league.league_name }}</h5>
-            <h5 style="text-align: right;">Max users: {{ league.max_num_users }}</h5>
+            <div style="text-align: right; padding-left: 85%;">
+                <h5 style="float: left;">{{ league.curr_num_users }}/{{ league.max_num_users }}</h5>
+                {% if league.curr_num_users < league.max_num_users %}
+                    <form action="{{ url_for('league') }}" method="post">
+                        <input type="hidden" name="league_join_name" value="{{ league.league_name }}">
+                        <input type="hidden" name="form" value="join">
+                        <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="join">Join</button>
+                    </form>
+                {% endif %}
+            </div>
         </a>
         {% endfor %}
-    </div>
-    <div class="list-group">
-
     </div>
 
 </div>
 <div style="float: left; width: 30%; margin: 0 0 2% 2%;">
     <h2 style="margin: 0 0 2% 0;">Create League</h2>
-    <form action="{{ url_for('create_league') }}" method="post">
+    {% if error_create %}<div style="color: red"><strong>Error:</strong> {{ error_create }}</div>{% endif %}
+    <form action="{{ url_for('league') }}" method="post">
         <input type="text" name="league_name" class="form-control" placeholder="Name" required autofocus>
         <input type="password" name="league_password" class="form-control" placeholder="Password" required>
+        <input type="hidden" name="form" value="create">
         <div style="margin: 2% 2% 0 0;">
             <div style="float: left; padding-right: 2%;">Max number of users</div>
             <select id="max_users" name="max_users">
                 <option value="4">4</option>
-                <option value="4">6</option>
-                <option value="4">8</option>
-                <option value="4">10</option>
-                <option value="4">12</option>
-                <option value="4">14</option>
-                <option value="4">16</option>
+                <option value="6">6</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+                <option value="12">12</option>
+                <option value="14">14</option>
+                <option value="16">16</option>
             </select>
         </div>
         <div style="padding-top: 3%"></div>
-        {% if error %}<div style="color: red"><strong>Error:</strong> {{ error }}</div>{% endif %}
         <button style="background-color: #A6FFAA; border-radius: 10%;" type="submit">Create League</button>
     </form>
 </div>
-{% endif %}
 
 {% endblock %}
