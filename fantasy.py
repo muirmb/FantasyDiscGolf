@@ -59,10 +59,10 @@ class TourPlayer(db.Model):
     points = db.Column(db.Integer, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     division = db.Column(db.String(8), nullable=False)
-    def __init__(self, name, pdga_number, points, rating, division):
+    def __init__(self, name, pdga_number, tour_num, points, rating, division):
         self.player_name = name
         self.pdga_number = pdga_number
-        self.tour_number = 2
+        self.tour_number = tour_num
         self.points = points
         self.rating = rating
         self.division = division
@@ -84,6 +84,17 @@ class UserInLeague(db.Model):
         self.ties = 0
         self.totalPoints = 0
 
+class Tournament(db.Model):
+    tour_num = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(32))
+    location = db.Column(db.String(32), nullable=False)
+    dates = db.Column(db.String(24))
+    def __init__(self, num, name, loc, dates):
+        self.tour_num = num
+        self.name = name
+        self.location = loc
+        self.dates = dates
+
 
 
 #--- ROUTES ---#
@@ -91,16 +102,20 @@ class UserInLeague(db.Model):
 
 @app.route("/")
 def home():
-    #getTourPlayers()
+    #getTourInfoAndPlayers()
     #addOwns()
     login = "Login"
     leagues = []
+    admin = False
     if 'user' in session:
         login = "Logout"
         inLeagues = UserInLeague.query.filter_by(user_id=session['id'])
         for l in inLeagues:
             leagues.append(League.query.filter_by(league_id=l.league_id).first())
-    return render_template("home.html", leagues=leagues, login=login)
+        if session['user'] == "Matt":
+            admin = True
+    tournaments = Tournament.query.all()
+    return render_template("home.html", leagues=leagues, login=login, tournaments=tournaments, admin=admin)
 
 @app.route("/league", methods=['GET','POST'])
 def league():
@@ -181,48 +196,55 @@ def changePassword():
 
 @app.route("/players")
 def players():
-    p = TourPlayer.query.filter_by(tour_number=2)
+    p = TourPlayer.query.filter_by(tour_number=65288)
     login = "Login"
     if 'user' in session:
         login = "Logout"
     return render_template("players.html", players=p, login=login)
 
-@app.route("/sortPlayers")
+@app.route("/sortPlayers", methods=['GET', 'POST'])
 def sortPlayers():
-    login = "Login"
-    if 'user' in session:
-        login = "Logout"
-    players=[]
-    p = TourPlayer.query.filter_by(tour_number=2)
-    for player in p:
-        parr = []
-        parr.append(player.player_name)
-        parr.append(player.points)
-        parr.append(player.pdga_number)
-        parr.append(player.rating)
-        players.append(parr)
-    players.sort(reverse=True, key=sortByRating)
-    return render_template("players.html", players=players, login=login)
+    sortJson = request.get_json()
+    playersObjects = TourPlayer.query.filter_by(tour_number=65288)
+    players = []
+    for player in playersObjects:
+        players.append({'player_name':player.player_name, 'pdga_number':player.pdga_number, 'tour_number':player.tour_number, 'points':player.points, 'rating':player.rating, 'division':player.division})
+
+    if sortJson['league'] != "":
+        ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(sortJson['league']))
+        for owned in ownedInLeague:
+            for player in players:
+                if player['pdga_number'] == owned.pdga_number:
+                    players.remove(player)
+    if sortJson['attr'] == "rating":
+        players.sort(reverse=True, key=sortByRating)
+    elif sortJson['attr'] == "pdga-num":
+        players.sort(key=sortByPdgaNum)
+    elif sortJson['attr'] == "name":
+        players.sort(key=sortByName)
+    return json.dumps(players)
 
 @app.route("/search", methods=['GET','POST'])
 def search():
-    players = TourPlayer.query.filter_by(tour_number=2)
-    string = ""
+    searchJson = request.get_json()
+    if searchJson['selection'] == "all":
+        players = TourPlayer.query.filter_by(tour_number=65288)
+    else:
+        avPlayers = TourPlayer.query.filter_by(tour_number=65288)
+        players = []
+        for p in avPlayers:
+            players.append(p)
+        ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(searchJson['league']))
+        for owned in ownedInLeague:
+            for player in players:
+                if player.pdga_number == owned.pdga_number:
+                    players.remove(player)
     matches = []
-    login = "Login"
-    if 'user' in session:
-        login = "Logout"
-    if request.method == 'POST':
-        string = request.form['search']
+    searchString = searchJson['string']
     for player in players:
-        if player.player_name.rfind(string) > -1:
-            parr = []
-            parr.append(player.player_name)
-            parr.append(player.points)
-            parr.append(player.pdga_number)
-            parr.append(player.rating)
-            matches.append(parr)
-    return render_template("players.html", players=matches, login=login)
+        if player.player_name.rfind(searchString) > -1:
+            matches.append({'player_name':player.player_name, 'pdga_number':player.pdga_number, 'tour_number':player.tour_number, 'points':player.points, 'rating':player.rating, 'division':player.division})
+    return json.dumps(matches)
 
 @app.route("/addToTeam", methods=['GET', 'POST'])
 def addToTeam():
@@ -230,6 +252,10 @@ def addToTeam():
     db.session.add(Owns(session['id'], request.form["addPDGANum"], getLeagueIDByName(league)))
     db.session.commit()
     return redirect(url_for('myTeam', name=league))
+
+@app.route("/admin")
+def admin():
+    return render_template("admin.html")
 
 
 
@@ -251,7 +277,7 @@ def availablePlayers(name):
     login = "Login"
     if 'user' in session:
         login = "Logout"
-        avPlayers = TourPlayer.query.filter_by(tour_number=2)
+        avPlayers = TourPlayer.query.filter_by(tour_number=65288)
         avPlayersList = []
         for p in avPlayers:
             avPlayersList.append(p)
@@ -260,7 +286,7 @@ def availablePlayers(name):
             for player in avPlayersList:
                 if player.pdga_number == owned.pdga_number:
                     avPlayersList.remove(player)
-        return render_template("players.html", players=avPlayersList, login=login, leagueName=name)
+        return render_template("players.html", players=avPlayersList, login=login, leagueName=name, tournament=Tournament.query.filter_by(tour_num=65288).first())
     else:
         return redirect(url_for('login'))
 
@@ -296,6 +322,9 @@ def myTeam(name):
     else:
         return redirect(url_for("login"))
 
+@app.route("/<name>/matchup")
+def matchup(name):
+    return render_template("matchup.html", leagueName=name)
 
 
 #--- METHODS ---#
@@ -312,9 +341,19 @@ def add_user_to_league(league_name):
 
 def getLeagueIDByName(name):
     return League.query.filter_by(league_name=name).first().league_id
+
+
+#--- SORTING KEY METHODS ---#
     
 def sortByRating(player):
-    return player[3]
+    return player['rating']
+
+def sortByPdgaNum(player):
+    return player['pdga_number']
+
+def sortByName(player):
+    return player['player_name']
+
 
 def getName(pdgaNum):
     r = requests.get("https://www.pdga.com/player/"+str(pdgaNum))
@@ -332,9 +371,17 @@ def getName(pdgaNum):
 
     return careerWins
 
-def getTourPlayers():
-    r = requests.get("https://www.pdga.com/tour/event/66457")
+def getTourInfoAndPlayers():
+    tour_num = 65288
+    r = requests.get("https://www.pdga.com/tour/event/"+str(tour_num))
     soup = BeautifulSoup(r.text, 'html.parser')
+    name = soup.find('div', attrs={'class': "panel-pane pane-page-title"}).h1.text
+    info_list = soup.find('ul', attrs={'class':'event-info info-list'})
+    dates = info_list.find('li', attrs={'class':'tournament-date'}).text[6:]
+    location = info_list.find('li', attrs={'class': 'tournament-location'}).text[10:]
+    db.session.add(Tournament(tour_num, name, location, dates))
+    db.session.commit()
+
     table = soup.find_all('div', attrs={'class': 'table-container'})
     odds = table[1].find_all('tr', attrs={'class':'odd'})
 
@@ -346,7 +393,7 @@ def getTourPlayers():
         pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
         rating = odd.find('td', attrs={'class': 'player-rating propagator'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, place, rating, "MPO"))
+        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "MPO"))
         db.session.commit()
 
     evens = table[1].find_all('tr', attrs={'class':'even'})
@@ -359,7 +406,7 @@ def getTourPlayers():
         pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
         rating = even.find('td', attrs={'class': 'player-rating propagator'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, place, rating, "MPO"))
+        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "MPO"))
         db.session.commit()
 
     odds = table[2].find_all('tr', attrs={'class':'odd'})
@@ -372,7 +419,7 @@ def getTourPlayers():
         pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
         rating = odd.find('td', attrs={'class': 'player-rating'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, place, rating, "FPO"))
+        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "FPO"))
         db.session.commit()
 
     evens = table[2].find_all('tr', attrs={'class':'even'})
@@ -385,7 +432,7 @@ def getTourPlayers():
         pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
         rating = even.find('td', attrs={'class': 'player-rating'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, place, rating, "FPO"))
+        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "FPO"))
         db.session.commit()
 
     return 0

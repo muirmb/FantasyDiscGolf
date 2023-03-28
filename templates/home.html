@@ -2,20 +2,51 @@
 {% block title %}Home Page{% endblock %}
 {% block style %}
 <style>
+  section-title {
+    padding-bottom: 2%;
+  }
 </style>
 {% endblock %}
 {% block login %}{{ login }}{% endblock %}
+{% block moreNav %}
+  {% if admin %}
+    <li class="nav-item">
+        <a class="nav-link" href="../admin">Admin</a>
+      </li>
+  {% endif %}
+{% endblock %}
 {% block content %}
 <img src="../static/FantasyDGLogo.jpg" width="250px" style="margin: 1% 0 1% 1%;">
-<h4 style="margin: 0 0 0 2%">Top available players</h4>
-<div class="list-group" style="flex-direction: row; overflow: auto;">
-    {% for league in leagues %}
-    <a href="{{league.league_name}}/league" class="list-group-item list-group-item-action" aria-current="true" style="margin: 0 0 0 2%; background-color: #A6FFAA; border-radius: 10%; min-width: 20%">
-      <img src="../static/simon.jpg" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
-      <h5 class="mb-1" style="float: left;">{{ league.league_name }}</h5>
-      <h5 style="text-align: right;">{{ league.curr_num_users }}/{{league.max_num_users}}</h5>
-      <small>And some small print.</small>
-    </a>
-    {% endfor %}
+<div style="margin: 1% 2% 5% 2%;">
+  <h4 class="section-title">My Leagues</h4>
+  <div class="list-group" style="flex-direction: row; overflow: auto;">
+      {% for league in leagues %}
+      <a href="{{league.league_name}}/league" class="list-group-item list-group-item-action" aria-current="true" style="background-color: #d1ffd3; border-radius: 10%; min-width: 20%; max-width: 30%;">
+        <img src="../static/simon.jpg" width="50px" height="50px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
+        <h5 class="mb-1" style="float: left;">{{ league.league_name }}</h5>
+        <h5 style="text-align: right;">{{ league.curr_num_users }}/{{league.max_num_users}}</h5>
+        <small>And some small print.</small>
+      </a>
+      {% endfor %}
+  </div>
 </div>
+
+<div style="margin: 1% 2% 5% 2%;">
+  <h4 class="section-title">Upcoming Tournaments</h4>
+  <div class="list-group" style="flex-direction: row; overflow: auto;">
+      {% for tour in tournaments %}
+      <a href="#" class="list-group-item list-group-item-action" aria-current="true" style="background-color: #d1ffd3; border-radius: 10%; width: 23vw; height: 23vw;">
+        <img src="../static/simon.jpg" width="80px" height="80px" style="border-radius: 50%; text-align: center;">
+        <div style="padding-top: 10%;">
+          <h4 class="mb-1" style="float: left; text-align: center;">{{ tour.name }}</h4>
+          <p style="text-align: center;">{{ tour.location }}</p>
+          <div>
+            <p style="text-align: center;">{{ tour.dates }}</p>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+  </div>
+</div>
+
 {% endblock %}

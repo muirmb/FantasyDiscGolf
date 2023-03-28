@@ -2,7 +2,145 @@
 {% block title %}Players{% endblock %}
 {% block script %}
 <script type="text/javascript">
+		function setup() {
+			document.getElementById("searchButton").addEventListener("click", search);
+      document.getElementById('sortByRating').addEventListener("click", () => {sort("rating");});
+      document.getElementById('sortByPdgaNum').addEventListener("click", () => {sort("pdga-num")});
+      document.getElementById('sortByName').addEventListener("click", () => {sort("name")});
+		}
 
+    function sort(attribute) {
+      console.log("Sending POST request for sort");
+      var leagueName = "";
+      if(document.getElementById("navbarSupportedContent").contains(document.getElementById("leagueDropdown")))
+        leagueName = document.getElementById("leagueNameDropdown").innerText;
+      fetch("/sortPlayers", {
+					method: "post",
+					headers: { "Content-type": "application/json; charset=UTF-8" },
+					body: JSON.stringify({
+						attr: attribute,
+            league: leagueName
+					})
+				})
+				.then((response) => {
+					return response.json();
+				})
+				.then((result) => {
+					updatePlayers(result);
+				})
+				.catch(() => {
+					console.log("Error posting new items!");
+				});
+    }
+
+		function search() {
+			console.log("Sending POST request for search");
+			const searchString = document.getElementById("searchString").value
+      var whichPlayers = "";
+      var leagueName = "";
+      if(document.getElementById("navbarSupportedContent").contains(document.getElementById("leagueDropdown"))) {
+        whichPlayers = "av";
+        leagueName = document.getElementById("leagueNameDropdown").innerText;
+      }
+      else 
+        whichPlayers = "all";
+			
+			fetch("/search", {
+					method: "post",
+					headers: { "Content-type": "application/json; charset=UTF-8" },
+					body: JSON.stringify({
+						string: searchString,
+            selection: whichPlayers,
+            league: leagueName
+					})
+				})
+				.then((response) => {
+					return response.json();
+				})
+				.then((result) => {
+					updatePlayers(result);
+				})
+				.catch(() => {
+					console.log("Error posting new items!");
+				});
+		}
+
+    function updatePlayers(result) {
+			playerArea = document.getElementById("playerArea");
+      num = playerArea.children.length;
+      for (var i = 0; i < num; i++) {
+        playerArea.removeChild(playerArea.firstElementChild);
+      }
+      
+			for (var i = 0; i < result.length-1; i++) {
+        rect = document.createElement("a");
+        image = document.createElement("img");
+        player_name = document.createElement("h5");
+				rect.href = "#";
+        rect.setAttribute("class", "list-group-item list-group-item-action");
+        rect.id = result[i].pdga_number;
+
+        form_area = document.createElement("div");
+        form_area.style.float = "left";
+        form_area.style.paddingRight = "1%"
+
+        if(document.getElementById("navbarSupportedContent").contains(document.getElementById("leagueDropdown"))) {
+          form = document.createElement("form");
+          form.action = "/addToTeam";
+          form.method = "post";
+          hidden_num = document.createElement("input");
+          hidden_num.type = "hidden";
+          hidden_num.name = "addPDGANum";
+          hidden_num.value = result[i].pdga_number;
+          form.appendChild(hidden_num);
+
+          hidden_league_name = document.createElement("input");
+          hidden_league_name.type = "hidden";
+          hidden_league_name.value = document.getElementById("leagueNameDropdown").innerText;
+          hidden_league_name.name = "leagueName";
+          form.appendChild(hidden_league_name);
+
+          button = document.createElement("button");
+          button.setAttribute("class", "btn btn-outline-success btn-sm");
+          button.id = "add";
+          button.type = "submit";
+          button.innerText = "+";
+          button.style.borderRadius = "100%"
+          form.appendChild(button);
+
+          form_area.appendChild(form);
+        }
+        rect.appendChild(form_area);
+
+        player_name.innerText = result[i].player_name;
+        player_name.setAttribute("class", "mb-1");
+        player_name.style.float = "left";
+        player_name.style.paddingRight = "0.5%";
+        player_name.style.color
+        rect.appendChild(player_name);
+
+        pdga_num = document.createElement("p");
+        pdga_num.setAttribute("class", "mb-1");
+        pdga_num.style.color = "#888888";
+        pdga_num.style.float = "left";
+        pdga_num.innerText = "#" + result[i].pdga_number;
+        rect.appendChild(pdga_num);
+
+        rating = document.createElement("h5");
+        rating.style.textAlign = "right";
+        rating.innerText = result[i].rating;
+        rect.appendChild(rating);
+
+        playerArea.appendChild(rect);
+			}
+		}
+
+		function clearInput() {
+			console.log("Clearing input");
+			document.getElementById("mess").value = "";
+		}
+
+		window.addEventListener("load", setup);
 </script>
 {% endblock script %}
 
@@ -15,43 +153,53 @@
 
 {% block moreNav %}
 {% if leagueName %}
-<li class="nav-item">
-  <a class="nav-link" href="league" style="color: lightseagreen">{{ leagueName }}</a>
-</li>
-<li class="nav-item">
-    <a class="nav-link" href="myTeam" style="color: lightseagreen">My Team <span class="sr-only">(current)</span></a>
-</li>
-<li class="nav-item">
-    <a class="nav-link" href="availablePlayers" style="color: lightseagreen">Available Players</a>
+<li class="nav-item dropdown" id="leagueDropdown">
+  <a class="nav-link dropdown-toggle" id="leagueNameDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ leagueName }}</a>
+  <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+      <a class="dropdown-item" href="league">League Home</a>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="myTeam">My Team</a>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="availablePlayers">Available Players</a>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="matchup">Matchup</a>
+  </div>
 </li>
 {% endif %}
 {% endblock %}
 
 {% block content %}
-<div>
+<div style="padding-left: 2%;">
   <h2>Players</h2>
-  <form class="form-inline my-2 my-lg-0 ml-auto" action="{{ url_for('search') }}" method="post">
-    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" value="" id="string" name="search">
-    <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="search">Search</button>
+  {% if tournament %}
+  <div>Showing players for <strong>{{ tournament.name }}</strong></div>
+  <div>Dates: <strong>{{ tournament.dates }}</strong></div>
+  <div>Location: <strong>{{ tournament.location }}</strong></div>
+  {% endif %}
+  <form class="form-inline my-2 my-lg-0 ml-auto">
+    <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" value="" id="searchString" name="searchString">
+    <button class="btn btn-outline-success my-2 my-sm-0" type="button" id="searchButton">Search</button>
   </form>
+  <button class="btn my-2 my-sm-0 btn-link" id="sortByRating" style="float: left">Sort by rating</button>
+  <button class="btn my-2 my-sm-0 btn-link" id="sortByName" style="float: left">Sort by name</button>
+  <button class="btn my-2 my-sm-0 btn-link" id="sortByPdgaNum">Sort by PDGA number</button>
 </div>
-<a class="nav-link" href="sortPlayers" id="sortByRating">Sort by rating</a>
-<div class="list-group">
-    {% for player in players %}
-    <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-      <img src="../static/simon.jpg" width="80px" height="80px" style="border-radius: 50%; float: left; margin: 0 15px 0 0;">
-      <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player.player_name }}</h5>
-      <h5 style="float: left; color: #888888">{{ player.rating }}</h5>
-      <div style="text-align: right;">
-        <form action="{{ url_for('addToTeam') }}" method="post">
-          <input type="hidden" value="{{ player.pdga_number }}" name="addPDGANum">
-          {% if leagueName %}<input type="hidden" value="{{ leagueName }}" name="leagueName">{% endif %}
-          <button class="btn btn-outline-success my-2 my-sm-0" type="submit" id="add">Add Player</button>
-        </form>
-      </div>
-      <p class="mb-1">PDGA #{{ player.pdga_number }}</p>
-      <small>And some small print.</small>
-    </a>
-    {% endfor %}
-  </div>
+<div class="list-group" id="playerArea">
+  {% for player in players %}
+  <a href="#" class="list-group-item list-group-item-action" aria-current="true" id="{{ player.pdga_number }}">
+    <div style="float: left; padding-right: 1%; width: 3%;">
+    {% if leagueName %}
+      <form action="/addToTeam" method="post">
+        <input type="hidden" value="{{ player.pdga_number }}" name="addPDGANum">
+        <input type="hidden" value="{{ leagueName }}" name="leagueName">
+        <button class="btn btn-outline-success btn-sm" type="submit" id="add" style="border-radius: 100%;">+</button>
+      </form>
+    {% endif %}
+    </div>
+    <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player.player_name }}</h5>
+    <p class="mb-1" style="float: left; color: #888888">#{{ player.pdga_number }}</p>
+    <h5 style="text-align: right">{{ player.rating }}</h5>
+  </a>
+  {% endfor %}
+</div>
 {% endblock content %}

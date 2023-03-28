@@ -3,14 +3,17 @@
 {% block login %}{{ login }}{% endblock %}
 
 {% block moreNav %}
-<li class="nav-item">
-    <a class="nav-link" href="league" style="color: lightseagreen">{{ leagueName }}</a>
-</li>
-<li class="nav-item">
-    <a class="nav-link" href="myTeam" style="color: lightseagreen">My Team <span class="sr-only">(current)</span></a>
-</li>
-<li class="nav-item">
-    <a class="nav-link" href="availablePlayers" style="color: lightseagreen">Available Players</a>
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ leagueName }}</a>
+    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+        <a class="dropdown-item" href="league">League Home</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="myTeam">My Team</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="availablePlayers">Available Players</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="matchup">Matchup</a>
+    </div>
 </li>
 {% endblock %}
 
