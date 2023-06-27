@@ -13,6 +13,8 @@
         <a class="dropdown-item" href="availablePlayers">Available Players</a>
         <div class="dropdown-divider"></div>
         <a class="dropdown-item" href="matchup">Matchup</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="draft">Draft</a>
     </div>
 </li>
 {% endblock %}
@@ -25,10 +27,18 @@
     <div class="list-group">
         {% for player in mpoPlayers %}
         <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-            <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
-            <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
-            <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
-            <p class="mb-1">PDGA #{{ player[2] }}</p>
+            <div style="float: left; padding-right: 1%;">
+                <form action="/removeFromTeam" method="post">
+                    <input type="hidden" value="{{ player.pdga_number }}" name="remPDGANum">
+                    <input type="hidden" value="{{ leagueName }}" name="leagueName">
+                    <input type="hidden" value="{{ player.division }}" name="playerDivision">
+                    <button class="btn btn-outline-danger btn-sm" type="submit" id="add" style="border-radius: 100%;">drop</button>
+                </form>
+            </div>
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">{{ player.player_name }}</h5>
+            <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
+            <h5 style="text-align: right;">Points: {{ player.points }}</h5>
+            <p class="mb-1">Rating: {{ player.rating }}</p>
         </a>
         {% endfor %}
     </div>
@@ -38,10 +48,18 @@
     <div class="list-group">
         {% for player in fpoPlayers %}
         <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-        <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player[0] }}</h5>
-        <h5 style="float:left; color: #888888;">{{ player[3] }}</h5>
-        <h5 style="text-align: right;">Points: {{ player[1] }}</h5>
-        <p class="mb-1">PDGA #{{ player[2] }}</p>
+            <div style="float: left; padding-right: 1%;">
+                <form action="/removeFromTeam" method="post">
+                    <input type="hidden" value="{{ player.pdga_number }}" name="remPDGANum">
+                    <input type="hidden" value="{{ leagueName }}" name="leagueName">
+                    <input type="hidden" value="{{ player.division }}" name="playerDivision">
+                    <button class="btn btn-outline-danger btn-sm" type="submit" id="add" style="border-radius: 100%;">drop</button>
+                </form>
+            </div>
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">{{ player.player_name }}</h5>
+            <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
+            <h5 style="text-align: right;">Points: {{ player.points }}</h5>
+            <p class="mb-1">Rating: {{ player.rating }}</p>
         </a>
         {% endfor %}
     </div>

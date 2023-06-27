@@ -72,7 +72,7 @@
         playerArea.removeChild(playerArea.firstElementChild);
       }
       
-			for (var i = 0; i < result.length-1; i++) {
+			for (var i = 1; i < result.length-1; i++) {
         rect = document.createElement("a");
         image = document.createElement("img");
         player_name = document.createElement("h5");
@@ -84,7 +84,7 @@
         form_area.style.float = "left";
         form_area.style.paddingRight = "1%"
 
-        if(document.getElementById("navbarSupportedContent").contains(document.getElementById("leagueDropdown"))) {
+        if(document.getElementById("navbarSupportedContent").contains(document.getElementById("leagueDropdown")) && ((result[i].division == "MPO" && result[0].mpoPlayers < 5) || (result[i].division == "FPO" && result[0].fpoPlayers < 3))) {
           form = document.createElement("form");
           form.action = "/addToTeam";
           form.method = "post";
@@ -99,6 +99,12 @@
           hidden_league_name.value = document.getElementById("leagueNameDropdown").innerText;
           hidden_league_name.name = "leagueName";
           form.appendChild(hidden_league_name);
+
+          hidden_division_name = document.createElement("input");
+          hidden_division_name.type = "hidden";
+          hidden_division_name.value = result[i].division;
+          hidden_division_name.name = "playerDivision";
+          form.appendChild(hidden_division_name);
 
           button = document.createElement("button");
           button.setAttribute("class", "btn btn-outline-success btn-sm");
@@ -163,6 +169,8 @@
       <a class="dropdown-item" href="availablePlayers">Available Players</a>
       <div class="dropdown-divider"></div>
       <a class="dropdown-item" href="matchup">Matchup</a>
+      <div class="dropdown-divider"></div>
+      <a class="dropdown-item" href="draft">Draft</a>
   </div>
 </li>
 {% endif %}
@@ -183,17 +191,29 @@
   <button class="btn my-2 my-sm-0 btn-link" id="sortByRating" style="float: left">Sort by rating</button>
   <button class="btn my-2 my-sm-0 btn-link" id="sortByName" style="float: left">Sort by name</button>
   <button class="btn my-2 my-sm-0 btn-link" id="sortByPdgaNum">Sort by PDGA number</button>
+  {% if leagueName %}
+    {% if user.numMPOPlayers == 5 and user.numFPOPlayers == 3 %}
+    <div style="color: red;"><strong>Your MPO and FPO rosters are full. Drop players if you would like to add more.</strong></div>
+    {% elif user.numMPOPlayers == 5 %}
+    <div style="color: red;"><strong>Your MPO roster is full. Drop players if you would like to add more.</strong></div>
+    {% elif user.numFPOPlayers == 3 %}
+    <div style="color: red;"><strong>Your FPO roster is full. Drop players if you would like to add more.</strong></div>
+    {% endif %}
+  {% endif %}
 </div>
 <div class="list-group" id="playerArea">
   {% for player in players %}
   <a href="#" class="list-group-item list-group-item-action" aria-current="true" id="{{ player.pdga_number }}">
     <div style="float: left; padding-right: 1%; width: 3%;">
     {% if leagueName %}
-      <form action="/addToTeam" method="post">
-        <input type="hidden" value="{{ player.pdga_number }}" name="addPDGANum">
-        <input type="hidden" value="{{ leagueName }}" name="leagueName">
-        <button class="btn btn-outline-success btn-sm" type="submit" id="add" style="border-radius: 100%;">+</button>
-      </form>
+      {% if (player.division=='MPO' and user.numMPOPlayers < 5) or (player.division=='FPO' and user.numFPOPlayers < 3) %}
+        <form action="/addToTeam" method="post">
+          <input type="hidden" value="{{ player.pdga_number }}" name="addPDGANum">
+          <input type="hidden" value="{{ leagueName }}" name="leagueName">
+          <input type="hidden" value="{{ player.division }}" name="playerDivision">
+          <button class="btn btn-outline-success btn-sm" type="submit" id="add" style="border-radius: 100%;">+</button>
+        </form>
+      {% endif %}
     {% endif %}
     </div>
     <h5 class="mb-1" style="float: left; padding-right: 0.5%;">{{ player.player_name }}</h5>

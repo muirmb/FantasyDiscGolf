@@ -6,9 +6,16 @@ import modules.calc_points as calc_points
 import requests
 import lxml
 from bs4 import BeautifulSoup
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
 app = Flask(__name__)
+cred = credentials.Certificate("DatabaseKey.json")
+firebase_admin.initialize_app(cred)
+db2 = firestore.client()
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fantasy.db'
+
 db = SQLAlchemy(app)
 
 app.secret_key = 'development key'
@@ -40,6 +47,14 @@ class League(db.Model):
         self.max_num_users = max_num_users
         self.owner_id = owner_id
         self.curr_num_users = 0
+
+class Message(db.Model):
+    message_id = db.Column(db.Integer, primary_key=True)
+    sender_name = db.Column(db.String(24), nullable=False)
+    content = db.Column(db.String(160), nullable=False)
+    def __init__(self, content, name):
+        self.content = content
+        self.sender_name = name
 
 # User owns player in League
 class Owns(db.Model):
@@ -75,6 +90,8 @@ class UserInLeague(db.Model):
     losses = db.Column(db.Integer, nullable=False)
     ties = db.Column(db.Integer, nullable=False)
     totalPoints = db.Column(db.Integer, nullable=False)
+    numMPOPlayers = db.Column(db.Integer, nullable=False)
+    numFPOPlayers = db.Column(db.Integer, nullable=False)
     def __init__(self, user_id, league_id, username):
         self.user_id = user_id
         self.username = username
@@ -83,6 +100,8 @@ class UserInLeague(db.Model):
         self.losses = 0
         self.ties = 0
         self.totalPoints = 0
+        self.numMPOPlayers = 0
+        self.numFPOPlayers = 0
 
 class Tournament(db.Model):
     tour_num = db.Column(db.Integer, primary_key=True)
@@ -104,6 +123,12 @@ class Tournament(db.Model):
 def home():
     #getTourInfoAndPlayers()
     #addOwns()
+    #makeMatchups(10,10)
+    tournaments = []
+    docs = db2.collection(u'Tournaments').where(u'name', u'==', u'DGPT - The Open at Austin presented by Lone Star Disc').stream()
+    
+    for doc in docs:
+        tournaments.append(doc.to_dict())
     login = "Login"
     leagues = []
     admin = False
@@ -114,7 +139,6 @@ def home():
             leagues.append(League.query.filter_by(league_id=l.league_id).first())
         if session['user'] == "Matt":
             admin = True
-    tournaments = Tournament.query.all()
     return render_template("home.html", leagues=leagues, login=login, tournaments=tournaments, admin=admin)
 
 @app.route("/league", methods=['GET','POST'])
@@ -196,7 +220,7 @@ def changePassword():
 
 @app.route("/players")
 def players():
-    p = TourPlayer.query.filter_by(tour_number=65288)
+    p = TourPlayer.query.filter_by(tour_number=64907)
     login = "Login"
     if 'user' in session:
         login = "Logout"
@@ -205,7 +229,8 @@ def players():
 @app.route("/sortPlayers", methods=['GET', 'POST'])
 def sortPlayers():
     sortJson = request.get_json()
-    playersObjects = TourPlayer.query.filter_by(tour_number=65288)
+    playersObjects = TourPlayer.query.filter_by(tour_number=64907)
+
     players = []
     for player in playersObjects:
         players.append({'player_name':player.player_name, 'pdga_number':player.pdga_number, 'tour_number':player.tour_number, 'points':player.points, 'rating':player.rating, 'division':player.division})
@@ -222,15 +247,22 @@ def sortPlayers():
         players.sort(key=sortByPdgaNum)
     elif sortJson['attr'] == "name":
         players.sort(key=sortByName)
+
+    # Add how many spots are filled in the users roster, if necessary
+    if sortJson['league'] != "":
+        user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(sortJson['league'])).first()
+        players.insert(0, {'mpoPlayers': user.numMPOPlayers, 'fpoPlayers': user.numFPOPlayers})
+
     return json.dumps(players)
 
 @app.route("/search", methods=['GET','POST'])
 def search():
     searchJson = request.get_json()
+    matches = []
     if searchJson['selection'] == "all":
-        players = TourPlayer.query.filter_by(tour_number=65288)
+        players = TourPlayer.query.filter_by(tour_number=64907)
     else:
-        avPlayers = TourPlayer.query.filter_by(tour_number=65288)
+        avPlayers = TourPlayer.query.filter_by(tour_number=64907)
         players = []
         for p in avPlayers:
             players.append(p)
@@ -239,17 +271,38 @@ def search():
             for player in players:
                 if player.pdga_number == owned.pdga_number:
                     players.remove(player)
-    matches = []
     searchString = searchJson['string']
     for player in players:
         if player.player_name.rfind(searchString) > -1:
             matches.append({'player_name':player.player_name, 'pdga_number':player.pdga_number, 'tour_number':player.tour_number, 'points':player.points, 'rating':player.rating, 'division':player.division})
+    if searchJson['league'] != "":
+        user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(searchJson['league'])).first()
+        matches.insert(0, {'mpoPlayers': user.numMPOPlayers, 'fpoPlayers': user.numFPOPlayers})
+
     return json.dumps(matches)
 
 @app.route("/addToTeam", methods=['GET', 'POST'])
 def addToTeam():
+    user = UserInLeague.query.filter_by(user_id=session['id']).first()
     league = request.form["leagueName"]
     db.session.add(Owns(session['id'], request.form["addPDGANum"], getLeagueIDByName(league)))
+    if request.form['playerDivision'] == 'MPO':
+        user.numMPOPlayers += 1
+    elif request.form['playerDivision'] == 'FPO':
+        user.numFPOPlayers += 1
+    db.session.commit()
+    return redirect(url_for('myTeam', name=league))
+
+@app.route("/removeFromTeam", methods=['GET','POST'])
+def removeFromTeam():
+    user = UserInLeague.query.filter_by(user_id=session['id']).first()
+    league = request.form["leagueName"]
+    obj = Owns.query.filter_by(user_id=session['id'], pdga_number=request.form["remPDGANum"], league_id=getLeagueIDByName(league)).first()
+    db.session.delete(obj)
+    if request.form['playerDivision'] == 'MPO':
+        user.numMPOPlayers -= 1
+    elif request.form['playerDivision'] == 'FPO':
+        user.numFPOPlayers -= 1
     db.session.commit()
     return redirect(url_for('myTeam', name=league))
 
@@ -277,7 +330,8 @@ def availablePlayers(name):
     login = "Login"
     if 'user' in session:
         login = "Logout"
-        avPlayers = TourPlayer.query.filter_by(tour_number=65288)
+        user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name)).first()
+        avPlayers = TourPlayer.query.filter_by(tour_number=64907)
         avPlayersList = []
         for p in avPlayers:
             avPlayersList.append(p)
@@ -286,7 +340,7 @@ def availablePlayers(name):
             for player in avPlayersList:
                 if player.pdga_number == owned.pdga_number:
                     avPlayersList.remove(player)
-        return render_template("players.html", players=avPlayersList, login=login, leagueName=name, tournament=Tournament.query.filter_by(tour_num=65288).first())
+        return render_template("players.html", players=avPlayersList, login=login, leagueName=name, tournament=Tournament.query.filter_by(tour_num=65288).first(), user=user)
     else:
         return redirect(url_for('login'))
 
@@ -304,19 +358,14 @@ def myTeam(name):
         fpoPlayers = []
         
         for num in owned:
-            parr = []
             player = TourPlayer.query.filter_by(pdga_number=num).first()
             if player == None:
                 continue
             totalPoints += player.points
-            parr.append(player.player_name)
-            parr.append(player.points)
-            parr.append(player.pdga_number)
-            parr.append(player.rating)
             if player.division == "MPO":
-                mpoPlayers.append(parr)
+                mpoPlayers.append(player)
             elif player.division == "FPO":
-                fpoPlayers.append(parr)
+                fpoPlayers.append(player)
 
         return render_template("myTeam.html", username=session['user'], login=login, mpoPlayers=mpoPlayers, fpoPlayers=fpoPlayers, total=totalPoints, leagueName=name)
     else:
@@ -324,8 +373,53 @@ def myTeam(name):
 
 @app.route("/<name>/matchup")
 def matchup(name):
-    return render_template("matchup.html", leagueName=name)
+    totalPoints = 0
+    login = "Login"
+    if 'user' in session:
+        login = "Logout"
+        owned = []
+        userOwns = Owns.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name))
+        for obj in userOwns:
+            owned.append(obj.pdga_number)
+        mpoPlayers = []
+        fpoPlayers = []
+        
+        for num in owned:
+            player = TourPlayer.query.filter_by(pdga_number=num).first()
+            if player == None:
+                continue
+            totalPoints += player.points
+            if player.division == "MPO":
+                mpoPlayers.append(player)
+            elif player.division == "FPO":
+                fpoPlayers.append(player)
+        return render_template("matchup.html", leagueName=name, username=session['user'], mpoPlayers=mpoPlayers, fpoPlayers=fpoPlayers, total=totalPoints, login=login)
+    else:
+        return redirect(url_for("login"))
 
+@app.route("/<name>/draft")
+def draft(name):
+    return render_template("draft.html", leagueName=name, messages=[{'message_id':0, 'content': 'Hello'}])
+
+@app.route('/messages', methods=['GET'])
+def get_items():
+	allMess = Message.query.all()
+	messages = []
+	for mess in allMess:
+		messages.append({'message_id':mess.message_id, 'content':mess.content, 'sender_name':mess.sender_name})
+	return json.dumps(messages)
+
+@app.route('/new_message', methods=['GET','POST'])
+def add():
+	newmessageJson = request.get_json()
+	newmessage = Message(newmessageJson['mess'], session['user'])
+	db.session.add(newmessage)
+	db.session.commit()
+	allMess = Message.query.all()
+	messages = []
+	for mess in allMess:
+		messages.append({'message_id':mess.message_id, 'content':mess.content, 'sender_name':mess.sender_name})
+	return json.dumps(messages)
 
 #--- METHODS ---#
 
@@ -341,19 +435,6 @@ def add_user_to_league(league_name):
 
 def getLeagueIDByName(name):
     return League.query.filter_by(league_name=name).first().league_id
-
-
-#--- SORTING KEY METHODS ---#
-    
-def sortByRating(player):
-    return player['rating']
-
-def sortByPdgaNum(player):
-    return player['pdga_number']
-
-def sortByName(player):
-    return player['player_name']
-
 
 def getName(pdgaNum):
     r = requests.get("https://www.pdga.com/player/"+str(pdgaNum))
@@ -372,7 +453,7 @@ def getName(pdgaNum):
     return careerWins
 
 def getTourInfoAndPlayers():
-    tour_num = 65288
+    tour_num = 64907
     r = requests.get("https://www.pdga.com/tour/event/"+str(tour_num))
     soup = BeautifulSoup(r.text, 'html.parser')
     name = soup.find('div', attrs={'class': "panel-pane pane-page-title"}).h1.text
@@ -437,7 +518,81 @@ def getTourInfoAndPlayers():
 
     return 0
 
+def makeMatchups(teams, weeks):
+    # Create all matchup pairs
+    allMatchups = []
+    for i in range(1,teams):
+        for j in range(i+1,teams+1):
+            allMatchups.append([i,j])
+
+    weeklyMatchups = []
+    for i in range(teams-1):
+        thisWeek = []
+        replaceLater = []
+        # Make checkoff list
+        checkoff = []
+        for x in range(1, teams+1):
+            checkoff.append(x)
+
+        j=0
+        while j < teams//2:
+            print("all matches left", allMatchups)
+            foundMatch = False
+            for match in allMatchups:
+                if match[0] in checkoff and match[1] in checkoff:
+                    thisWeek.append(match)
+                    checkoff.remove(match[0])
+                    checkoff.remove(match[1])
+                    print("checkoff now has", checkoff)
+                    foundMatch = True
+                    break
+            if foundMatch == False:
+                lastMatch = thisWeek.pop()
+                checkoff.append(lastMatch[0])
+                checkoff.append(lastMatch[1])
+                print("checkoff now has", checkoff)
+                replaceLater.append(lastMatch)
+                allMatchups.remove(lastMatch)
+                j = j-2
+            j = j+1
+        print("This week: ", thisWeek)
+        # remove matchups from this week
+        for match in thisWeek:
+            allMatchups.remove(match)
+
+        for match in replaceLater:
+            allMatchups.append(match)
+            replaceLater.remove(match)
+        weeklyMatchups.append(thisWeek)
+
+    print(weeklyMatchups)
+
+
+    return 0
+
+#--- SORTING KEY METHODS ---#
+    
+def sortByRating(player):
+    return player['rating']
+
+def sortByPdgaNum(player):
+    return player['pdga_number']
+
+def sortByName(player):
+    return player['player_name']
+
+
+def makeSomeData():
+    data = {
+        u'name': u'Los Angeles',
+        u'state': u'CA',
+        u'country': u'USA'
+    }
+
+    # Add a new doc in collection 'cities' with ID 'LA'
+    db2.collection(u'cities').document(u'LA').set(data)
 
 if __name__ == "__main__":
     db.create_all()
+    makeSomeData()
     app.run(debug=True)

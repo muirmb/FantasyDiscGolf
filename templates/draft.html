@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Draft{% endblock %}
+{% block script %}
+	<script type="text/javascript">
+		let timeoutID;
+		let timeout = 2000;
+
+		function setup() {
+			document.getElementById("button").addEventListener("click", makePost);
+			timeoutID = window.setTimeout(poller, timeout);
+		}
+
+		function makePost() {
+			console.log("Sending POST request");
+			const mess = document.getElementById("mess").value
+			
+			fetch("/new_message", {
+					method: "post",
+					headers: { "Content-type": "application/json; charset=UTF-8" },
+					body: JSON.stringify({
+						mess: mess
+					})
+				})
+				.then((response) => {
+					return response.json();
+				})
+				.then((result) => {
+					updateChat(result);
+					clearInput();
+				})
+				.catch(() => {
+					console.log("Error posting new items!");
+				});
+		}
+
+		function poller() {
+			console.log("Polling for new items");
+			fetch("/messages")
+				.then((response) => {
+					return response.json();
+				})
+				.then(updateChat)
+				.catch(() => {
+					console.log("Error fetching items!");
+				});
+		}
+
+		function updateChat(result) {
+			console.log("Updating the chat");
+			chatArea = document.getElementById("chat");
+			message = document.createElement("div");
+			for (var i = 0; i < result.length; i++) {
+				if(result[i].message_id > document.getElementById("last_id").getAttribute("value")){
+					message.innerText = result[i].content;
+					message.style.border = "solid 1px #c1ffc3";
+					message.style.width = "50%";
+					message.style.padding = "1%";
+					message.style.wordWrap = "break-word";
+					message.style.marginBottom = "2%";
+					chatArea.appendChild(message);
+				}
+			}
+			chatArea.scrollTop = chatArea.scrollHeight;
+			last = document.getElementById("last_id");
+			last.setAttribute("value", result[result.length-1].message_id);
+			console.log(last.value);
+			
+			timeoutID = window.setTimeout(poller, timeout);
+		}
+
+		function clearInput() {
+			console.log("Clearing input");
+			document.getElementById("mess").value = "";
+		}
+
+		window.addEventListener("load", setup);
+	</script>
+{% endblock script %}
+{% block style %}
+{% endblock %}
+
+{% block login %}{{ login }}{% endblock %}
+
+{% block moreNav %}
+<li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">{{ leagueName }}</a>
+    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+        <a class="dropdown-item" href="league">League Home</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="myTeam">My Team</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="availablePlayers">Available Players</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="matchup">Matchup</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="draft">Draft</a>
+    </div>
+</li>
+{% endblock %}
+
+{% block content %}
+<div style="margin-left: 2%;">
+	<h2>{{ leagueName }}'s Draft</h2>
+	<h4 style="margin-top: 2%;">Chat</h4>
+	<div id="chat" style="width: 30%; min-height: 12em; max-height: 12em; overflow-y: auto;">
+		{% for message in messages %}
+			<div style="border: solid 1px #c1ffc3; word-wrap: break-word; margin-bottom: 2%; width: 50%; padding: 1%;">
+				{{message.content}}
+			</div>
+		{% endfor %}
+	</div>
+	<div style="margin-top: 2%;">
+		<form name="theForm">
+			<input type="text" id="mess" name="mess" value="" placeholder="Message"/>
+			<input class="btn btn-outline-success my-2 my-sm-0" type="button" id="button" value="enter" />
+			<input type="hidden" name="last_id" id="last_id" value="{% if messages|length > 0 %}{{messages[messages|length-1].message_id}} {% endif %}" >
+		</form>
+	</div>
+</div>
+{% endblock content%}

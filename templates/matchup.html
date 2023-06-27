@@ -1,9 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Home Page{% endblock %}
+{% block title %}Matchup{% endblock %}
 {% block style %}
 <style>
   section-title {
     padding-bottom: 2%;
+    padding-top: 1%;
+  }
+  matchup-left-side {
+    margin-left: 2%;
+    float: left;
+    width: 40%;
   }
 </style>
 {% endblock %}
@@ -19,10 +25,71 @@
         <a class="dropdown-item" href="availablePlayers">Available Players</a>
         <div class="dropdown-divider"></div>
         <a class="dropdown-item" href="matchup">Matchup</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" href="draft">Draft</a>
     </div>
 </li>
 {% endblock %}
 {% block content %}
-
-
+<div style="margin-left: 2%; width: 40%; float: left;">
+  <h2 class="section-title" style="float: left;">{{ username }}'s Team</h2>
+  <h2 class="section-title" style="text-align: right;">Total Points: {{ total }}</h2>
+  <div>
+      <h4 class="section-title">MPO</h4>
+      <div class="list-group">
+          {% for player in mpoPlayers %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">{{ player.player_name }}</h5>
+            <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
+            <h5 style="text-align: right;">Points: {{ player.points }}</h5>
+            <p class="mb-1">Rating: {{ player.rating }}</p>
+          </a>
+          {% endfor %}
+      </div>
+  </div>
+  <div>
+      <h4 class="section-title">FPO</h4>
+      <div class="list-group">
+          {% for player in fpoPlayers %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">{{ player.player_name }}</h5>
+            <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
+            <h5 style="text-align: right;">Points: {{ player.points }}</h5>
+            <p class="mb-1">Rating: {{ player.rating }}</p>
+          </a>
+          {% endfor %}
+      </div>
+  </div>
+</div>
+<div style="float: left; width: 16%; font-size:xx-large; text-align: center; margin-top: 20%;">VS</div>
+<div style="margin-right: 2%; width: 40%; float: right">
+  <h2 class="section-title" style="float: left;">{{ username }}'s Team</h2>
+  <h2 class="section-title" style="text-align: right;">Total Points: {{ total }}</h2>
+  <div>
+      <h4 class="section-title">MPO</h4>
+      <div class="list-group">
+          {% for player in mpoPlayers %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">{{ player.player_name }}</h5>
+            <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
+            <h5 style="text-align: right;">Points: {{ player.points }}</h5>
+            <p class="mb-1">Rating: {{ player.rating }}</p>
+          </a>
+          {% endfor %}
+      </div>
+  </div>
+  <div>
+      <h4 class="section-title">FPO</h4>
+      <div class="list-group">
+          {% for player in fpoPlayers %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">{{ player.player_name }}</h5>
+            <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
+            <h5 style="text-align: right;">Points: {{ player.points }}</h5>
+            <p class="mb-1">Rating: {{ player.rating }}</p>
+          </a>
+          {% endfor %}
+      </div>
+  </div>
+</div>
 {% endblock %}

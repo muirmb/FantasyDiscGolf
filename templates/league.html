@@ -40,16 +40,20 @@
         <input type="password" name="league_password" class="form-control" placeholder="Password" required>
         <input type="hidden" name="form" value="create">
         <div style="margin: 2% 2% 0 0;">
-            <div style="float: left; padding-right: 2%;">Max number of users</div>
+            <div style="float: left; padding-right: 2%;">Number of users</div>
             <select id="max_users" name="max_users">
                 <option value="4">4</option>
                 <option value="6">6</option>
                 <option value="8">8</option>
-                <option value="10">10</option>
-                <option value="12">12</option>
-                <option value="14">14</option>
-                <option value="16">16</option>
             </select>
+        </div>
+        <div style="float: left;">
+            <label for="draft_date">Draft date</label>
+            <input type="date" name="draft_date" id="draft_date">
+        </div>
+        <div style="float: left; margin-left: 2%;">
+            <label for="draft_time">Draft time</label>
+            <input type="time" name="draft_time" id="draft_time">
         </div>
         <div style="padding-top: 3%"></div>
         <button style="background-color: #A6FFAA; border-radius: 10%;" type="submit">Create League</button>
