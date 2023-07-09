@@ -220,7 +220,7 @@ def changePassword():
 
 @app.route("/players")
 def players():
-    p = TourPlayer.query.filter_by(tour_number=64907)
+    p = TourPlayer.query.all()
     login = "Login"
     if 'user' in session:
         login = "Logout"
@@ -229,7 +229,7 @@ def players():
 @app.route("/sortPlayers", methods=['GET', 'POST'])
 def sortPlayers():
     sortJson = request.get_json()
-    playersObjects = TourPlayer.query.filter_by(tour_number=64907)
+    playersObjects = TourPlayer.query.all()
 
     players = []
     for player in playersObjects:
@@ -260,9 +260,9 @@ def search():
     searchJson = request.get_json()
     matches = []
     if searchJson['selection'] == "all":
-        players = TourPlayer.query.filter_by(tour_number=64907)
+        players = TourPlayer.query.all()
     else:
-        avPlayers = TourPlayer.query.filter_by(tour_number=64907)
+        avPlayers = TourPlayer.query.all()
         players = []
         for p in avPlayers:
             players.append(p)
@@ -331,7 +331,7 @@ def availablePlayers(name):
     if 'user' in session:
         login = "Logout"
         user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name)).first()
-        avPlayers = TourPlayer.query.filter_by(tour_number=64907)
+        avPlayers = TourPlayer.query.all()
         avPlayersList = []
         for p in avPlayers:
             avPlayersList.append(p)
@@ -340,7 +340,7 @@ def availablePlayers(name):
             for player in avPlayersList:
                 if player.pdga_number == owned.pdga_number:
                     avPlayersList.remove(player)
-        return render_template("players.html", players=avPlayersList, login=login, leagueName=name, tournament=Tournament.query.filter_by(tour_num=65288).first(), user=user)
+        return render_template("players.html", players=avPlayersList, login=login, leagueName=name, tournament=Tournament.query.filter_by(tour_num=55460).first(), user=user)
     else:
         return redirect(url_for('login'))
 
@@ -399,14 +399,25 @@ def matchup(name):
 
 @app.route("/<name>/draft")
 def draft(name):
-    return render_template("draft.html", leagueName=name, messages=[{'message_id':0, 'content': 'Hello'}])
+    login = "Login"
+    user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name)).first()
+    avPlayers = TourPlayer.query.all()
+    avPlayersList = []
+    for p in avPlayers:
+        avPlayersList.append(p)
+    ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(name))
+    for owned in ownedInLeague:
+        for player in avPlayersList:
+            if player.pdga_number == owned.pdga_number:
+                avPlayersList.remove(player)
+    return render_template("draft.html", leagueName=name, messages=[{'message_id':0, 'content': 'Hello', 'sender': 'Matt'}], login=login, players=avPlayersList, user=user)
 
 @app.route('/messages', methods=['GET'])
 def get_items():
 	allMess = Message.query.all()
 	messages = []
 	for mess in allMess:
-		messages.append({'message_id':mess.message_id, 'content':mess.content, 'sender_name':mess.sender_name})
+		messages.append({'message_id':mess.message_id, 'content':mess.content, 'sender':mess.sender_name})
 	return json.dumps(messages)
 
 @app.route('/new_message', methods=['GET','POST'])
@@ -418,7 +429,7 @@ def add():
 	allMess = Message.query.all()
 	messages = []
 	for mess in allMess:
-		messages.append({'message_id':mess.message_id, 'content':mess.content, 'sender_name':mess.sender_name})
+		messages.append({'message_id':mess.message_id, 'content':mess.content, 'sender':mess.sender_name})
 	return json.dumps(messages)
 
 #--- METHODS ---#
@@ -453,7 +464,7 @@ def getName(pdgaNum):
     return careerWins
 
 def getTourInfoAndPlayers():
-    tour_num = 64907
+    tour_num = 55460
     r = requests.get("https://www.pdga.com/tour/event/"+str(tour_num))
     soup = BeautifulSoup(r.text, 'html.parser')
     name = soup.find('div', attrs={'class': "panel-pane pane-page-title"}).h1.text

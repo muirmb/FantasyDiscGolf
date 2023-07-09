@@ -1,0 +1,29 @@
+.clickable-item{
+    background-color: #d1ffd3;
+}
+.section-area{
+    margin-top: 1%;
+    margin-left: 2%;
+}
+.section-title {
+    margin-top: 2%;
+    margin-bottom: 1%;
+}
+
+
+.player-name{
+    float: left;
+    margin-right: 0.5%;
+}
+.pdga-num{
+    float: left;
+    color: #888888;
+}
+.rating{
+    text-align: right;
+}
+.add-button-area{
+    float: left;
+    margin-right: 1%;
+    width: 2em;
+}
