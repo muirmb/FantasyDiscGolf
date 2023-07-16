@@ -1,9 +1,29 @@
 let timeoutID;
-let timeout = 5000;
+let timeoutTurn;
+let timeout = 10000;
+let second = 1000;
+let count = 1;
 
 function setup() {
     document.getElementById("button").addEventListener("click", makePost);
     timeoutID = window.setTimeout(poller, timeout);
+    timeoutTurn = window.setTimeout(nextTurn, timeout);
+    timeoutCountdown = window.setTimeout(countdown, second);
+}
+
+function nextTurn() {
+    document.getElementById("upNow").innerText = document.getElementById(count).innerText;
+    document.getElementById("timer").innerText = 10;
+    let child = document.getElementById(count);
+    document.getElementById("order").removeChild(child);
+    console.log("removed" + count);
+    count += 1;
+    timeoutTurn = window.setTimeout(nextTurn, timeout);
+}
+
+function countdown() {
+    document.getElementById("timer").innerText = document.getElementById("timer").innerText-1;
+    timeoutCountdown = window.setTimeout(countdown, second);
 }
 
 function makePost() {

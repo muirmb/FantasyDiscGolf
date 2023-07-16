@@ -291,6 +291,9 @@ def addToTeam():
     elif request.form['playerDivision'] == 'FPO':
         user.numFPOPlayers += 1
     db.session.commit()
+    if request.form['draft'] == 'draft':
+        flash('Draft selection succesful')
+        return redirect(url_for('draft', name=league))
     return redirect(url_for('myTeam', name=league))
 
 @app.route("/removeFromTeam", methods=['GET','POST'])
@@ -332,9 +335,7 @@ def availablePlayers(name):
         login = "Logout"
         user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name)).first()
         avPlayers = TourPlayer.query.all()
-        avPlayersList = []
-        for p in avPlayers:
-            avPlayersList.append(p)
+        avPlayersList = [p for p in avPlayers]
         ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(name))
         for owned in ownedInLeague:
             for player in avPlayersList:
@@ -402,15 +403,24 @@ def draft(name):
     login = "Login"
     user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name)).first()
     avPlayers = TourPlayer.query.all()
-    avPlayersList = []
-    for p in avPlayers:
-        avPlayersList.append(p)
+    avPlayersList = [p for p in avPlayers]
     ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(name))
     for owned in ownedInLeague:
         for player in avPlayersList:
             if player.pdga_number == owned.pdga_number:
                 avPlayersList.remove(player)
-    return render_template("draft.html", leagueName=name, messages=[{'message_id':0, 'content': 'Hello', 'sender': 'Matt'}], login=login, players=avPlayersList, user=user)
+
+    allUsers = UserInLeague.query.filter_by(league_id=getLeagueIDByName(name))
+    allUsersList = [u for u in allUsers]
+    draftOrder = []
+    count = 0
+    for i in range(6):
+        for u in allUsersList:
+            draftOrder.append({'username': u.username, 'id': count})
+            count += 1
+        allUsersList.reverse()
+
+    return render_template("draft.html", leagueName=name, login=login, players=avPlayersList, user=user, users=draftOrder)
 
 @app.route('/messages', methods=['GET'])
 def get_items():
