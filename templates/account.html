@@ -23,7 +23,7 @@
         </tr>
         <tr>
             <td><b>Leagues (5 max)</b></td>
-            <td style="text-align: right;">{% for name in leagues %}{{name}}, {% endfor %}</td>
+            <td style="text-align: right;">{% for league in leagues %}{{league.league_name}}, {% endfor %}</td>
         </tr>
     </table>
     <a class="navlink" href="/changePassword" id="changePassword">Change password here</a>

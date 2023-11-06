@@ -211,7 +211,14 @@ def account():
     if 'user' in session:
         login = "Logout"
         currUser = User.query.filter_by(user_id=session['id']).first()
-        return render_template("account.html", login=login, user=currUser, leagues=['I', 'D', 'I', 'O', 'T'])
+
+        # Get names of leagues the user is in
+        uInL = UserInLeague.query.filter_by(user_id=session['id'])
+        leagues = []
+        for l in uInL:
+            leagues.append(League.query.filter_by(league_id=l.league_id).first())
+
+        return render_template("account.html", login=login, user=currUser, leagues=leagues)
     return redirect(url_for('login'))
 
 @app.route("/changePassword")

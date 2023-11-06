@@ -45,6 +45,14 @@
             <p class="mb-1">Rating: {{ player.rating }}</p>
           </a>
           {% endfor %}
+          {% for x in range(mpoPlayers|length, 5) %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
+            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 style="text-align: right;">Points: -</h5>
+            <p class="mb-1">Rating: rating</p>
+          </a>
+          {% endfor %}
       </div>
   </div>
   <div>
@@ -56,6 +64,14 @@
             <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
             <h5 style="text-align: right;">Points: {{ player.points }}</h5>
             <p class="mb-1">Rating: {{ player.rating }}</p>
+          </a>
+          {% endfor %}
+          {% for x in range(fpoPlayers|length, 2) %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
+            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 style="text-align: right;">Points: -</h5>
+            <p class="mb-1">Rating: rating</p>
           </a>
           {% endfor %}
       </div>
@@ -76,6 +92,14 @@
             <p class="mb-1">Rating: {{ player.rating }}</p>
           </a>
           {% endfor %}
+          {% for x in range(mpoPlayers|length, 5) %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
+            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 style="text-align: right;">Points: -</h5>
+            <p class="mb-1">Rating: rating</p>
+          </a>
+          {% endfor %}
       </div>
   </div>
   <div>
@@ -87,6 +111,14 @@
             <h5 style="float:left; color: #888888;">#{{ player.pdga_number }}</h5>
             <h5 style="text-align: right;">Points: {{ player.points }}</h5>
             <p class="mb-1">Rating: {{ player.rating }}</p>
+          </a>
+          {% endfor %}
+          {% for x in range(fpoPlayers|length, 2) %}
+          <a href="#" class="list-group-item list-group-item-action" aria-current="true">
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
+            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 style="text-align: right;">Points: -</h5>
+            <p class="mb-1">Rating: rating</p>
           </a>
           {% endfor %}
       </div>
