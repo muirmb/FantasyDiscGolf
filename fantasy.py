@@ -1,3 +1,4 @@
+import datetime
 import json
 from flask import Flask, redirect, url_for, render_template, request, session, flash
 from flask_sqlalchemy import SQLAlchemy
@@ -26,12 +27,10 @@ class User(db.Model):
     username = db.Column(db.String(24), unique=True, nullable=False)
     email = db.Column(db.String(32), unique=True, nullable = False)
     password = db.Column(db.String(24), nullable=False)
-    total_points = db.Column(db.Integer)
     def __init__(self, username, email, password):
         self.username = username
         self.email = email
         self.password = password
-        self.total_points = 0
 
 # League class
 class League(db.Model):
@@ -105,7 +104,7 @@ class UserInLeague(db.Model):
 
 class Tournament(db.Model):
     tour_num = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(32))
+    name = db.Column(db.String(32), nullable=False)
     location = db.Column(db.String(32), nullable=False)
     dates = db.Column(db.String(24))
     def __init__(self, num, name, loc, dates):
@@ -114,6 +113,20 @@ class Tournament(db.Model):
         self.location = loc
         self.dates = dates
 
+class PlayerStats(db.Model):
+    player_name = db.Column(db.String(32), nullable=False)
+    pdga_num = db.Column(db.Integer, primary_key=True)
+    total_points = db.Column(db.Integer, nullable=False)
+    events_played = db.Column(db.Integer, nullable=False)
+    wins = db.Column(db.Integer, nullable=False)
+    top_10_finishes = db.Column(db.Integer, nullable=False)
+    def __init__(self, name, num, points, events, win, top):
+        self.player_name = name
+        self.pdga_num = num
+        self.total_points = points
+        self.events_played = events
+        self.wins = win
+        self.top_10_finishes = top
 
 
 #--- ROUTES ---#
@@ -125,7 +138,7 @@ def home():
     #addOwns()
     #makeMatchups(10,10)
     tournaments = []
-    docs = db2.collection(u'Tournaments').where(u'name', u'==', u'DGPT - The Open at Austin presented by Lone Star Disc').stream()
+    docs = db2.collection(u'Tournaments').stream()
     
     for doc in docs:
         tournaments.append(doc.to_dict())
@@ -320,6 +333,10 @@ def removeFromTeam():
 def admin():
     return render_template("admin.html")
 
+@app.route("/getEventInfo", methods=['GET','POST'])
+def getEventInfo():
+    getTourInfoAndPlayers(request.form["event_num"])
+    return redirect(url_for('home'))
 
 
 #--- SPECIFIC LEAGUE ---#
@@ -348,7 +365,7 @@ def availablePlayers(name):
             for player in avPlayersList:
                 if player.pdga_number == owned.pdga_number:
                     avPlayersList.remove(player)
-        return render_template("players.html", players=avPlayersList, login=login, leagueName=name, tournament=Tournament.query.filter_by(tour_num=55460).first(), user=user)
+        return render_template("players.html", players=avPlayersList, login=login, leagueName=name, tournament=Tournament.query.filter_by(tour_num=71468).first(), user=user)
     else:
         return redirect(url_for('login'))
 
@@ -478,70 +495,132 @@ def getName(pdgaNum):
 
     careerWins = insideArea.find('li', attrs={'class':'career-wins'}).a.text
 
-    return careerWins
+    return name
 
-def getTourInfoAndPlayers():
-    tour_num = 55460
+def getTourInfoAndPlayers(tour_num):
     r = requests.get("https://www.pdga.com/tour/event/"+str(tour_num))
     soup = BeautifulSoup(r.text, 'html.parser')
     name = soup.find('div', attrs={'class': "panel-pane pane-page-title"}).h1.text
     info_list = soup.find('ul', attrs={'class':'event-info info-list'})
     dates = info_list.find('li', attrs={'class':'tournament-date'}).text[6:]
     location = info_list.find('li', attrs={'class': 'tournament-location'}).text[10:]
-    db.session.add(Tournament(tour_num, name, location, dates))
-    db.session.commit()
+    if Tournament.query.filter_by(tour_num=tour_num).first() is None:
+        db.session.add(Tournament(tour_num, name, location, dates))
+        data = {
+            'location': location,
+            'name': name,
+            'end': datetime.datetime.now(tz=datetime.timezone.utc),
+            'start': datetime.datetime.now(tz=datetime.timezone.utc)
+        }
 
+        # Add a new doc in collection 'cities' with ID 'LA'
+        db2.collection(u'Tournaments').document(u'Worlds 2023').set(data)
+        db.session.commit()
+
+    elite_top20 = [100, 85, 75, 69, 64, 60, 57, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30]
     table = soup.find_all('div', attrs={'class': 'table-container'})
     odds = table[1].find_all('tr', attrs={'class':'odd'})
 
     for odd in odds:
+        points = 0
         if odd.find('td', attrs={'class': 'place'}) is not None:
-            place = odd.find('td', attrs={'class': 'place'}).text
+            place = int(odd.find('td', attrs={'class': 'place'}).text)
+            if place > 0 and place < 21:
+                points = elite_top20[place-1]
+            elif place > 20 and place < 49:
+                points = 50-place
+            elif place == 49 or place == 50:
+                points = 2
+            elif place > 50:
+                points = 1
         else:
             place = 0
         pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
         rating = odd.find('td', attrs={'class': 'player-rating propagator'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "MPO"))
+        if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "MPO"))
+        else:
+            player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
+            player.points = points
         db.session.commit()
 
     evens = table[1].find_all('tr', attrs={'class':'even'})
 
     for even in evens:
+        points = 0
         if even.find('td', attrs={'class': 'place'}) is not None:
-            place = even.find('td', attrs={'class': 'place'}).text
+            place = int(even.find('td', attrs={'class': 'place'}).text)
+            if place > 0 and place < 21:
+                points = elite_top20[place-1]
+            elif place > 20 and place < 49:
+                points = 50-place
+            elif place == 49 or place == 50:
+                points = 2
+            elif place > 50:
+                points = 1
         else:
             place = 0
         pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
         rating = even.find('td', attrs={'class': 'player-rating propagator'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "MPO"))
+        if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "MPO"))
+        else:
+            player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
+            player.points = points
         db.session.commit()
 
     odds = table[2].find_all('tr', attrs={'class':'odd'})
 
     for odd in odds:
+        points = 0
         if odd.find('td', attrs={'class': 'place'}) is not None:
-            place = odd.find('td', attrs={'class': 'place'}).text
+            place = int(odd.find('td', attrs={'class': 'place'}).text)
+            if place > 0 and place < 21:
+                points = elite_top20[place-1]
+            elif place > 20 and place < 49:
+                points = 50-place
+            elif place == 49 or place == 50:
+                points = 2
+            elif place > 50:
+                points = 1
         else:
             place = 0
         pdgaNum = odd.find('td', attrs={'class': 'pdga-number'}).text
         rating = odd.find('td', attrs={'class': 'player-rating'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "FPO"))
+        if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "FPO"))
+        else:
+            player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
+            player.points = points
         db.session.commit()
 
     evens = table[2].find_all('tr', attrs={'class':'even'})
 
     for even in evens:
+        points = 0
         if even.find('td', attrs={'class': 'place'}) is not None:
-            place = even.find('td', attrs={'class': 'place'}).text
+            place = int(even.find('td', attrs={'class': 'place'}).text)
+            if place > 0 and place < 21:
+                points = elite_top20[place-1]
+            elif place > 20 and place < 49:
+                points = 50-place
+            elif place == 49 or place == 50:
+                points = 2
+            elif place > 50:
+                points = 1
         else:
             place = 0
         pdgaNum = even.find('td', attrs={'class': 'pdga-number'}).text
         rating = even.find('td', attrs={'class': 'player-rating'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
-        db.session.add(TourPlayer(name, pdgaNum, tour_num, place, rating, "FPO"))
+        if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "FPO"))
+        else:
+            player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
+            player.points = points
         db.session.commit()
 
     return 0

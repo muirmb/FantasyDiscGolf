@@ -12,6 +12,11 @@
 <div style="margin: 2% 2% 2% 2%;">
     <h4 class="section-title">Admin Page</h4>
 </div>
+{% if success %}<div style="color: green"> {{ success }}</div>{% endif %}
+<form action="/getEventInfo" method="post">
+    <input type="text" id="event_num" name="event_num" value="" placeholder="Event number"/>
+    <input class="btn btn-outline-success my-2 my-sm-0" type="submit" id="button" value="Get Event Information" />
+</form>
 
 
 {% endblock %}
