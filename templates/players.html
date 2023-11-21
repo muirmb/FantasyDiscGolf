@@ -42,6 +42,7 @@
   <button class="btn my-2 my-sm-0 btn-link" id="sortByRating" style="float: left">Sort by rating</button>
   <button class="btn my-2 my-sm-0 btn-link" id="sortByName" style="float: left">Sort by name</button>
   <button class="btn my-2 my-sm-0 btn-link" id="sortByPdgaNum">Sort by PDGA number</button>
+  <button class="btn my-2 my-sm-0 btn-link" id="sortByPoints">Sort by total points</button>
   {% if leagueName %}
     {% if user.numMPOPlayers == 5 and user.numFPOPlayers == 3 %}
     <div style="color: red;"><strong>Your MPO and FPO rosters are full. Drop players if you would like to add more.</strong></div>
@@ -52,7 +53,14 @@
     {% endif %}
   {% endif %}
 </div>
-<div class="list-group" id="playerArea">
+<div id="labels" style="width:900px">
+  <h5 class="label">Top 10</h5>
+  <h5 class="label">Wins</h5>
+  <h5 class="label">Events</h5>
+  <h5 class="label">Total Points</h5>
+  <h5 class="label">Rating</h5>
+</div>
+<div class="list-group" id="playerArea" style="width: 920px; overflow-y: auto; height: 500px">
   {% for player in players %}
   <a href="#" class="list-group-item list-group-item-action" aria-current="true" id="{{ player.pdga_number }}">
     <div class="add-button-area">
@@ -69,10 +77,37 @@
     {% endif %}
     </div>
     <h5 class="mb-1 player-name">{{ player.player_name }}</h5>
-    <p class="mb-1 pdga-num">#{{ player.pdga_number }}</p>
-    <h5 class="rating">{{ player.rating }}</h5>
+    <p class="mb-1 pdga-num" value="{{ player.pdga_number }}" id="pdgaNum">#{{ player.pdga_number }}</p>
+    <div class="statArea">
+      <h5 class="stat">{{ player.top_10_finishes }}</h5>
+    </div>
+    <div class="statArea">
+      <h5 class="stat">{{ player.wins }}</h5>
+    </div>
+    <div class="statArea">
+      <h5 class="stat">{{ player.events_played }}</h5>
+    </div>
+    <div class="statArea">
+      <h5 class="stat">{{ player.total_points }}</h5>
+    </div>
+    <div class="statArea">
+      <h5 class="stat">{{ player.rating }}</h5>
+    </div>
+
   </a>
   {% endfor %}
+</div>
+<div id="myPopup" class="popup">
+  <div class="popup-content">
+      <h1 style="color:green;">
+            GeekforGeeks !
+        </h1>
+      <p>This is a popup box! PDGA number:</p>
+      <p style="float: left;" id="textPdga"></p>
+      <button id="closePopup">
+            Close
+        </button>
+  </div>
 </div>
 <script type="text/javascript" src="../static/scripts/playersActions.js"></script>
 {% endblock content %}

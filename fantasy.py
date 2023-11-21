@@ -70,13 +70,15 @@ class TourPlayer(db.Model):
     player_name = db.Column(db.String(32), nullable=False)
     pdga_number = db.Column(db.Integer, primary_key=True)
     tour_number = db.Column(db.Integer, primary_key=True)
+    place = db.Column(db.Integer, nullable=False)
     points = db.Column(db.Integer, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     division = db.Column(db.String(8), nullable=False)
-    def __init__(self, name, pdga_number, tour_num, points, rating, division):
+    def __init__(self, name, pdga_number, tour_num, place, points, rating, division):
         self.player_name = name
         self.pdga_number = pdga_number
         self.tour_number = tour_num
+        self.place = place
         self.points = points
         self.rating = rating
         self.division = division
@@ -115,18 +117,22 @@ class Tournament(db.Model):
 
 class PlayerStats(db.Model):
     player_name = db.Column(db.String(32), nullable=False)
-    pdga_num = db.Column(db.Integer, primary_key=True)
+    pdga_number = db.Column(db.Integer, primary_key=True)
     total_points = db.Column(db.Integer, nullable=False)
     events_played = db.Column(db.Integer, nullable=False)
     wins = db.Column(db.Integer, nullable=False)
     top_10_finishes = db.Column(db.Integer, nullable=False)
-    def __init__(self, name, num, points, events, win, top):
+    rating = db.Column(db.Integer, nullable=False)
+    division = db.Column(db.String(8), nullable=False)
+    def __init__(self, name, num, points, events, win, top, rating, div):
         self.player_name = name
-        self.pdga_num = num
+        self.pdga_number = num
         self.total_points = points
         self.events_played = events
         self.wins = win
         self.top_10_finishes = top
+        self.rating = rating
+        self.division = div
 
 
 #--- ROUTES ---#
@@ -240,7 +246,7 @@ def changePassword():
 
 @app.route("/players")
 def players():
-    p = TourPlayer.query.all()
+    p = PlayerStats.query.all()
     login = "Login"
     if 'user' in session:
         login = "Logout"
@@ -249,11 +255,11 @@ def players():
 @app.route("/sortPlayers", methods=['GET', 'POST'])
 def sortPlayers():
     sortJson = request.get_json()
-    playersObjects = TourPlayer.query.all()
+    playersObjects = PlayerStats.query.all()
 
     players = []
     for player in playersObjects:
-        players.append({'player_name':player.player_name, 'pdga_number':player.pdga_number, 'tour_number':player.tour_number, 'points':player.points, 'rating':player.rating, 'division':player.division})
+        players.append({'player_name':player.player_name, 'pdga_number':player.pdga_number, 'points':player.total_points, 'events':player.events_played, 'wins': player.wins, 'top_10':player.top_10_finishes, 'rating':player.rating, 'division':player.division})
 
     if sortJson['league'] != "":
         ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(sortJson['league']))
@@ -267,6 +273,8 @@ def sortPlayers():
         players.sort(key=sortByPdgaNum)
     elif sortJson['attr'] == "name":
         players.sort(key=sortByName)
+    elif sortJson['attr'] == 'points':
+        players.sort(reverse=True, key=sortByPoints)
 
     # Add how many spots are filled in the users roster, if necessary
     if sortJson['league'] != "":
@@ -358,7 +366,7 @@ def availablePlayers(name):
     if 'user' in session:
         login = "Logout"
         user = UserInLeague.query.filter_by(user_id=session['id'], league_id=getLeagueIDByName(name)).first()
-        avPlayers = TourPlayer.query.all()
+        avPlayers = PlayerStats.query.all()
         avPlayersList = [p for p in avPlayers]
         ownedInLeague = Owns.query.filter_by(league_id=getLeagueIDByName(name))
         for owned in ownedInLeague:
@@ -514,7 +522,7 @@ def getTourInfoAndPlayers(tour_num):
         }
 
         # Add a new doc in collection 'cities' with ID 'LA'
-        db2.collection(u'Tournaments').document(u'Worlds 2023').set(data)
+        db2.collection(u'Tournaments').document(name).set(data)
         db.session.commit()
 
     elite_top20 = [100, 85, 75, 69, 64, 60, 57, 54, 52, 50, 48, 46, 44, 42, 40, 38, 36, 34, 32, 30]
@@ -539,7 +547,7 @@ def getTourInfoAndPlayers(tour_num):
         rating = odd.find('td', attrs={'class': 'player-rating propagator'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
         if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
-            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "MPO"))
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, place, points, rating, "MPO"))
         else:
             player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
             player.points = points
@@ -565,7 +573,7 @@ def getTourInfoAndPlayers(tour_num):
         rating = even.find('td', attrs={'class': 'player-rating propagator'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
         if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
-            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "MPO"))
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, place, points, rating, "MPO"))
         else:
             player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
             player.points = points
@@ -591,7 +599,7 @@ def getTourInfoAndPlayers(tour_num):
         rating = odd.find('td', attrs={'class': 'player-rating'}).text
         name = odd.find('td', attrs={'class': 'player'}).a.text
         if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
-            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "FPO"))
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, place, points, rating, "FPO"))
         else:
             player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
             player.points = points
@@ -617,11 +625,13 @@ def getTourInfoAndPlayers(tour_num):
         rating = even.find('td', attrs={'class': 'player-rating'}).text
         name = even.find('td', attrs={'class': 'player'}).a.text
         if TourPlayer.query.filter_by(tour_number=tour_num, pdga_number=pdgaNum).first() is None:
-            db.session.add(TourPlayer(name, pdgaNum, tour_num, points, rating, "FPO"))
+            db.session.add(TourPlayer(name, pdgaNum, tour_num, place, points, rating, "FPO"))
         else:
             player = TourPlayer.query.filter_by(pdga_number=pdgaNum, tour_number=tour_num).first()
             player.points = points
         db.session.commit()
+
+    updatePlayerStats(TourPlayer.query.filter_by(tour_number=tour_num))
 
     return 0
 
@@ -677,6 +687,31 @@ def makeMatchups(teams, weeks):
 
     return 0
 
+def updatePlayerStats(thesePlayers):
+    for t in thesePlayers:
+        win = 0
+        top = 0
+
+        if t.place == 1:
+            win = 1
+        if t.place >= 1 and t.place <= 10:
+            top = 1
+
+        player = PlayerStats.query.filter_by(pdga_number=t.pdga_number).first()
+        if player is None:
+            db.session.add(PlayerStats(t.player_name, t.pdga_number, t.points, 1, win, top, t.rating, t.division))
+        else:
+            player.total_points += t.points
+            player.events_played += 1
+            player.wins += win
+            player.top_10_finishes += top
+            player.rating = t.rating
+            
+    db.session.commit()
+
+    return 0
+
+
 #--- SORTING KEY METHODS ---#
     
 def sortByRating(player):
@@ -687,6 +722,9 @@ def sortByPdgaNum(player):
 
 def sortByName(player):
     return player['player_name']
+
+def sortByPoints(player):
+    return player['points']
 
 
 def makeSomeData():

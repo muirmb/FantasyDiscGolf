@@ -3,6 +3,7 @@ function setup() {
     document.getElementById('sortByRating').addEventListener("click", () => {sort("rating");});
     document.getElementById('sortByPdgaNum').addEventListener("click", () => {sort("pdga-num")});
     document.getElementById('sortByName').addEventListener("click", () => {sort("name")});
+    document.getElementById('sortByPoints').addEventListener("click", () => {sort("points")});
 }
 
 function sort(attribute) {
@@ -73,16 +74,15 @@ function updatePlayers(result) {
         start = 1;
     for (var i = start; i < result.length; i++) {
         rect = document.createElement("a");
-        image = document.createElement("img");
         player_name = document.createElement("h5");
         rect.href = "#";
         rect.setAttribute("class", "list-group-item list-group-item-action");
         rect.id = result[i].pdga_number;
 
-        form_area = document.createElement("div");
-        form_area.className = "add-button-area";
-
         if(document.getElementById("navbarSupportedContent").contains(document.getElementById("leagueDropdown")) && ((result[i].division == "MPO" && result[0].mpoPlayers < 5) || (result[i].division == "FPO" && result[0].fpoPlayers < 3))) {
+            form_area = document.createElement("div");
+            form_area.className = "add-button-area";
+
             form = document.createElement("form");
             form.action = "/addToTeam";
             form.method = "post";
@@ -91,6 +91,12 @@ function updatePlayers(result) {
             hidden_num.name = "addPDGANum";
             hidden_num.value = result[i].pdga_number;
             form.appendChild(hidden_num);
+
+            hidden_draft = document.createElement("input");
+            hidden_draft.type = "hidden";
+            hidden_draft.name = "draft";
+            hidden_draft.value = "no";
+            form.appendChild(hidden_draft);
 
             hidden_league_name = document.createElement("input");
             hidden_league_name.type = "hidden";
@@ -113,8 +119,8 @@ function updatePlayers(result) {
             form.appendChild(button);
 
             form_area.appendChild(form);
+            rect.appendChild(form_area);
         }
-        rect.appendChild(form_area);
 
         player_name.innerText = result[i].player_name;
         player_name.setAttribute("class", "mb-1");
@@ -127,14 +133,78 @@ function updatePlayers(result) {
         pdga_num.innerText = "#" + result[i].pdga_number;
         rect.appendChild(pdga_num);
 
+        top10Area = document.createElement("div");
+        top10Area.className = "statArea";
+
+        top10 = document.createElement("h5");
+        top10.className = "stat";
+        top10.innerText = result[i].top_10;
+        top10Area.appendChild(top10);
+        rect.appendChild(top10Area);
+
+        winArea = document.createElement("div");
+        winArea.className = "statArea";
+
+        win = document.createElement("h5");
+        win.className = "stat";
+        win.innerText = result[i].wins;
+        winArea.appendChild(win);
+        rect.appendChild(winArea);
+
+        eventsArea = document.createElement("div");
+        eventsArea.className = "statArea";
+
+        events = document.createElement("h5");
+        events.className = "stat";
+        events.innerText = result[i].events;
+        eventsArea.appendChild(events);
+        rect.appendChild(eventsArea);
+
+        pointsArea = document.createElement("div");
+        pointsArea.className = "statArea";
+
+        points = document.createElement("h5");
+        points.className = "stat";
+        points.innerText = result[i].points;
+        pointsArea.appendChild(points);
+        rect.appendChild(pointsArea);
+
+        ratingArea = document.createElement("div");
+        ratingArea.className = "statArea";
+
         rating = document.createElement("h5");
-        rating.className = "rating";
+        rating.className = "stat";
         rating.innerText = result[i].rating;
-        rect.appendChild(rating);
+        ratingArea.appendChild(rating);
+        rect.appendChild(ratingArea);
+
 
         playerArea.appendChild(rect);
     }
 }
+
+
+/*
+Code for popup window when player is clicked on
+
+closePopup.addEventListener("click", function () {
+    myPopup.classList.remove("show");
+});
+window.addEventListener("click", function (event) {
+    if (event.target == myPopup) {
+        myPopup.classList.remove("show");
+    }
+});
+
+let elementsArray = document.querySelectorAll("a.list-group-item");
+
+elementsArray.forEach(function(elem) {
+    elem.addEventListener("click", function() {
+        let text = document.getElementById("textPdga");
+        text.innerText = elem.id;
+        myPopup.classList.add("show");
+    });
+});*/
 
 function clearInput() {
     console.log("Clearing input");

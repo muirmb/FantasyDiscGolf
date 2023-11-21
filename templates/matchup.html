@@ -2,14 +2,13 @@
 {% block title %}Matchup{% endblock %}
 {% block style %}
 <style>
-  section-title {
-    padding-bottom: 2%;
-    padding-top: 1%;
-  }
-  matchup-left-side {
+  .matchup-left-side {
     margin-left: 2%;
     float: left;
     width: 40%;
+  }
+  body {
+    background-image: linear-gradient(#e3f2fd, white);
   }
 </style>
 {% endblock %}
@@ -31,7 +30,7 @@
 </li>
 {% endblock %}
 {% block content %}
-<div style="margin-left: 2%; width: 40%; float: left;">
+<div class="matchup-left-side">
   <h2 class="section-title" style="float: left;">{{ username }}'s Team</h2>
   <h2 class="section-title" style="text-align: right;">Total Points: {{ total }}</h2>
   <div>
@@ -47,10 +46,10 @@
           {% endfor %}
           {% for x in range(mpoPlayers|length, 5) %}
           <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
-            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Empty</h5>
+            <h5 style="float:left; color: #888888;">#-</h5>
             <h5 style="text-align: right;">Points: -</h5>
-            <p class="mb-1">Rating: rating</p>
+            <p class="mb-1">Rating: -</p>
           </a>
           {% endfor %}
       </div>
@@ -68,10 +67,10 @@
           {% endfor %}
           {% for x in range(fpoPlayers|length, 2) %}
           <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
-            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Empty</h5>
+            <h5 style="float:left; color: #888888;">#-</h5>
             <h5 style="text-align: right;">Points: -</h5>
-            <p class="mb-1">Rating: rating</p>
+            <p class="mb-1">Rating: -</p>
           </a>
           {% endfor %}
       </div>
@@ -94,10 +93,10 @@
           {% endfor %}
           {% for x in range(mpoPlayers|length, 5) %}
           <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
-            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Empty</h5>
+            <h5 style="float:left; color: #888888;">#-</h5>
             <h5 style="text-align: right;">Points: -</h5>
-            <p class="mb-1">Rating: rating</p>
+            <p class="mb-1">Rating: -</p>
           </a>
           {% endfor %}
       </div>
@@ -115,10 +114,10 @@
           {% endfor %}
           {% for x in range(fpoPlayers|length, 2) %}
           <a href="#" class="list-group-item list-group-item-action" aria-current="true">
-            <h5 class="mb-1" style="float: left; padding-right: 1%;">Player Name</h5>
-            <h5 style="float:left; color: #888888;">#number</h5>
+            <h5 class="mb-1" style="float: left; padding-right: 1%;">Empty</h5>
+            <h5 style="float:left; color: #888888;">#-</h5>
             <h5 style="text-align: right;">Points: -</h5>
-            <p class="mb-1">Rating: rating</p>
+            <p class="mb-1">Rating: -</p>
           </a>
           {% endfor %}
       </div>
